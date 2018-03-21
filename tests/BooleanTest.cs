@@ -48,8 +48,8 @@ namespace SQLite.Tests
 
             public int CountWithFlag(Boolean flag)
             {
-                var cmd = CreateCommand("SELECT COUNT(*) FROM VO Where Flag = ?", flag);
-                return cmd.ExecuteScalar<int>();                
+                var cmd = CreateCommand("SELECT COUNT(*) FROM VO Where Flag = ?");
+                return cmd.ExecuteScalar<int>(new object[] { flag });            
             }
         }
         
@@ -61,8 +61,8 @@ namespace SQLite.Tests
             db.buildTable();
             for (int i = 0; i < 10; i++)
                 db.Insert(new VO() { Flag = (i % 3 == 0), Text = String.Format("VO{0}", i) });                
-            
-            // count vo which flag is true            
+
+            // count vo which flag is true      
             Assert.AreEqual(4, db.CountWithFlag(true));
             Assert.AreEqual(6, db.CountWithFlag(false));
 

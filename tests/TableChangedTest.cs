@@ -34,9 +34,9 @@ namespace SQLite.Tests
 			changeCount = 0;
 
 			db.TableChanged += (sender, e) => {
-
+                
 				if (e.Table.TableName == "Product") {
-					changeCount++;
+                    changeCount += e.Count;
 				}
 			};
 		}

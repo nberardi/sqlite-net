@@ -7,9 +7,17 @@
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>{6947A8F1-99BE-4DD1-AD4D-D89425CE67A2}</ProjectGuid>
     <OutputType>Library</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>SQLite.Tests</RootNamespace>
     <AssemblyName>SQLite.Tests</AssemblyName>
-    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.5.2</TargetFrameworkVersion>
+    <FileAlignment>512</FileAlignment>
+    <SolutionDir Condition="$(SolutionDir) == '' Or $(SolutionDir) == '*Undefined*'">..\..\</SolutionDir>
+    <RestorePackages>true</RestorePackages>
+    <ReleaseVersion>4.0</ReleaseVersion>
+    <NoWarn>1998, 0219, 0414, 1635, 4014, 0618, 0067, 0169</NoWarn>
+    <NuGetPackageImportStamp>
+    </NuGetPackageImportStamp>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>True</DebugSymbols>
@@ -48,10 +56,12 @@
     <Compile Include="EnumNullableTest.cs" />
     <Compile Include="EnumTest.cs" />
     <Compile Include="ExceptionAssert.cs" />
+    <Compile Include="GlobalSetup.cs" />
     <Compile Include="InsertTest.cs" />
     <Compile Include="CreateTableTest.cs" />
     <Compile Include="GuidTests.cs" />
     <Compile Include="CreateTableImplicitTest.cs" />
+    <Compile Include="NativeLibraryLoader.cs" />
     <Compile Include="NotNullAttributeTest.cs" />
     <Compile Include="SkipTest.cs" />
     <Compile Include="CollateTest.cs" />

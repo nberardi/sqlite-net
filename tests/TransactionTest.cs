@@ -210,9 +210,9 @@ namespace SQLite.Tests
 			//
 			var rollbacks = 0;
 			db.Tracer = m => {
-				if (m == "Executing: commit")
+				if (m == "ExecuteNonQuery: commit")
 					throw SQLiteException.New (SQLite3.Result.Busy, "Make commit fail");
-				if (m == "Executing: rollback")
+				if (m == "ExecuteNonQuery: rollback")
 					rollbacks++;
 			};
 			db.BeginTransaction ();
@@ -254,9 +254,9 @@ namespace SQLite.Tests
 			var rollbacks = 0;
 			db.Tracer = m => {
 				//Console.WriteLine (m);
-				if (m.StartsWith ("Executing: release"))
+				if (m.StartsWith ("ExecuteNonQuery: release"))
 					throw SQLiteException.New (SQLite3.Result.Busy, "Make release fail");
-				if (m == "Executing: rollback")
+				if (m == "ExecuteNonQuery: rollback")
 					rollbacks++;
 			};
 			var sp0 = db.SaveTransactionPoint ();
