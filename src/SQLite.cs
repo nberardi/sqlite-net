@@ -63,12 +63,14 @@ namespace SQLite
 {
     public class SQLiteException : Exception
     {
-        public SQLite3.Result Result { get; }
+		public TableMapping.Column Column { get; private set; }
+
+		public SQLite3.Result Result { get; }
         public SQLite3.ExtendedResult ExtendedResult { get; }
 
         public string SQLQuery { get; }
 
-        protected SQLiteException(SQLite3.Result r, string message, string sql = null)
+        public SQLiteException(SQLite3.Result r, string message, string sql = null)
             : this(r, (SQLite3.ExtendedResult)r, message, sql) { }
 
         protected SQLiteException(SQLite3.Result r, SQLite3.ExtendedResult er, string message, string sql = null)
@@ -80,18 +82,14 @@ namespace SQLite
             SQLQuery = sql;
         }
 
-        public static SQLiteException New(SQLite3.Result r, string message = null, string sql = null)
-        {
-            var er = (SQLite3.ExtendedResult)r;
-            r = (SQLite3.Result)((int)r & 0xff);
+		internal void PopulateColumnFromTableMapping(TableMapping mapping)
+		{
+			// extract column for which unique constraint was violated
+			var message = Message.ToLowerInvariant();
+			Column = mapping.Columns.Where(x => x.IsAutoInc == false && message.Contains(x.Name.ToLowerInvariant())).FirstOrDefault();
+		}
 
-            // if the message is null, set the string to the extended result if it falls in that range, else set it to the result value
-            message = message ?? ((int)er > (int)r ? er.ToString() : r.ToString());
-
-            return new SQLiteException(r, er, message, sql);
-        }
-
-        public override string ToString()
+		public override string ToString()
         {
             if (String.IsNullOrWhiteSpace(SQLQuery) == false)
                 return $"--------------------------\n{SQLQuery}\n--------------------------\n{base.ToString()}";
@@ -102,62 +100,14 @@ namespace SQLite
 
     public class NotNullConstraintViolationException : SQLiteException
     {
-        public IEnumerable<TableMapping.Column> Columns { get; protected set; }
-
-        protected NotNullConstraintViolationException(SQLite3.Result r, string message, string sql = null)
-            : base(r, message, sql) { }
-
-        protected NotNullConstraintViolationException(SQLite3.Result r, string message, TableMapping mapping, object obj, string sql = null)
-            : base(r, message, sql)
-        {
-            if (mapping != null && obj != null)
-                this.Columns = mapping.Columns.Where(c => c.IsNullable == false && c.GetValue(obj) == null);
-        }
-
-        public static new NotNullConstraintViolationException New(SQLite3.Result r, string message, string sql = null)
-        {
-            return new NotNullConstraintViolationException(r, message, sql);
-        }
-
-        public static NotNullConstraintViolationException New(SQLite3.Result r, string message, TableMapping mapping, object obj, string sql = null)
-        {
-            return new NotNullConstraintViolationException(r, message, mapping, obj);
-        }
-
-        public static NotNullConstraintViolationException New(SQLiteException exception, TableMapping mapping, object obj, string sql = null)
-        {
-            return new NotNullConstraintViolationException(exception.Result, exception.Message, mapping, obj);
-        }
-    }
+		public NotNullConstraintViolationException(SQLite3.Result r, string message, string sql = null)
+			: base(r, message, sql) { }
+	}
 
     public class UniqueConstraintViolationException : SQLiteException
     {
-        public IEnumerable<TableMapping.Column> Columns { get; protected set; }
-
-        protected UniqueConstraintViolationException(SQLite3.Result r, string message, string sql = null)
+		public UniqueConstraintViolationException(SQLite3.Result r, string message, string sql = null)
             : base(r, message, sql) { }
-
-        protected UniqueConstraintViolationException(SQLite3.Result r, string message, TableMapping mapping, object obj, string sql = null)
-            : base(r, message, sql)
-        {
-            if (mapping != null && obj != null)
-                this.Columns = mapping.Columns.Where(c => c.IsNullable == false && c.GetValue(obj) == null);
-        }
-
-        public static new UniqueConstraintViolationException New(SQLite3.Result r, string message, string sql = null)
-        {
-            return new UniqueConstraintViolationException(r, message, sql);
-        }
-
-        public static UniqueConstraintViolationException New(SQLite3.Result r, string message, TableMapping mapping, object obj, string sql = null)
-        {
-            return new UniqueConstraintViolationException(r, message, mapping, obj);
-        }
-
-        public static UniqueConstraintViolationException New(SQLiteException exception, TableMapping mapping, object obj, string sql = null)
-        {
-            return new UniqueConstraintViolationException(exception.Result, exception.Message, mapping, obj);
-        }
     }
 
     [Flags]
@@ -359,7 +309,7 @@ namespace SQLite
 
 			Handle = handle;
 			if (r != SQLite3.Result.OK) {
-				throw SQLiteException.New (r, String.Format ("Could not open database file: {0} ({1})", DatabasePath, r));
+				throw new SQLiteException(r, String.Format ("Could not open database file: {0} ({1})", DatabasePath, r));
 			}
 
 #if USE_SQLITEPCL_RAW
@@ -426,7 +376,7 @@ namespace SQLite
 			SQLite3.Result r = SQLite3.EnableLoadExtension (Handle, enabled ? 1 : 0);
 			if (r != SQLite3.Result.OK) {
                 string msg = SQLite3.GetErrorMessage(Handle);
-				throw SQLiteException.New (r, msg);
+				throw new SQLiteException(r, msg);
 			}
 		}
 
@@ -840,7 +790,7 @@ namespace SQLite
         public SQLiteCommand CreateCommand(string cmdText, bool fromCache = false)
 		{
 			if (!_open)
-                throw SQLiteException.New(SQLite3.Result.Error, "Cannot create commands from unopened database", sql: cmdText);
+                throw new SQLiteException(SQLite3.Result.Error, "Cannot create commands from unopened database", sql: cmdText);
 
             SQLiteCommand cmd = null;
             if (fromCache)
@@ -1702,15 +1652,13 @@ namespace SQLite
                 {
                     count += Execute(insertSql, insertVals.ToArray());
                 }
-                catch (SQLiteException ex) when (SQLite3.ExtendedErrCode(this.Handle) == SQLite3.ExtendedResult.ConstraintNotNull)
-                {
-                    throw NotNullConstraintViolationException.New(ex.Result, ex.Message, insertSql);
-                }
-                catch (SQLiteException ex) when (SQLite3.ExtendedErrCode(this.Handle) == SQLite3.ExtendedResult.ConstraintUnique)
-                {
-                    throw UniqueConstraintViolationException.New(ex.Result, ex.Message, insertSql);
-                }
-            }
+				catch (SQLiteException ex)
+				{
+					ex.PopulateColumnFromTableMapping(map);
+
+					throw;
+				}
+			}
 
             if (count > 0)
                 OnTableChanged(map, NotifyTableChangedAction.Insert, count);
@@ -1862,14 +1810,12 @@ namespace SQLite
                 {
                     count = insertCmd.ExecuteNonQuery(vals);
                 }
-                catch (SQLiteException ex) when (SQLite3.ExtendedErrCode(this.Handle) == SQLite3.ExtendedResult.ConstraintNotNull)
-                {
-                    throw NotNullConstraintViolationException.New(ex.Result, ex.Message, map, obj, insertCmd.CommandText);
-                }
-                catch (SQLiteException ex) when (SQLite3.ExtendedErrCode(this.Handle) == SQLite3.ExtendedResult.ConstraintUnique)
-                {
-                    throw UniqueConstraintViolationException.New(ex.Result, ex.Message, map, obj, insertCmd.CommandText);
-                }
+				catch (SQLiteException ex)
+				{
+					ex.PopulateColumnFromTableMapping(map);
+
+					throw;
+				}
 
 				if (map.HasAutoIncPK) {
 					var id = SQLite3.LastInsertRowid (Handle);
@@ -2074,14 +2020,12 @@ namespace SQLite
                 {
                     count = updateCmd.ExecuteNonQuery(ps.ToArray());
                 }
-                catch (SQLiteException ex) when (ex.Result == SQLite3.Result.Constraint && SQLite3.ExtendedErrCode(this.Handle) == SQLite3.ExtendedResult.ConstraintNotNull)
+                catch (SQLiteException ex) 
                 {
-                    throw NotNullConstraintViolationException.New(ex, map, obj, updateCmd.CommandText);
-                }
-                catch (SQLiteException ex) when (ex.Result == SQLite3.Result.Constraint && SQLite3.ExtendedErrCode(this.Handle) == SQLite3.ExtendedResult.ConstraintUnique)
-                {
-                    throw UniqueConstraintViolationException.New(ex, map, obj, updateCmd.CommandText);
-                }
+					ex.PopulateColumnFromTableMapping(map);
+
+					throw;
+				}
             }
 
             if (count > 0)
@@ -2297,7 +2241,7 @@ namespace SQLite
 						var r = useClose2 ? SQLite3.Close2 (Handle) : SQLite3.Close (Handle);
 						if (r != SQLite3.Result.OK) {
                             string msg = SQLite3.GetErrorMessage(Handle);
-							throw SQLiteException.New (r, msg);
+							throw new SQLiteException(r, msg);
 						}
 					}
 					else {
@@ -3213,16 +3157,10 @@ namespace SQLite
                 else
                 {
                     var msg = SQLite3.GetErrorMessage(Connection.Handle);
+                    var ex = new SQLiteException(r, msg, sql: CommandText);
+					ex.PopulateColumnFromTableMapping(map);
 
-                    if (r == SQLite3.Result.Constraint)
-                    {
-                        if (SQLite3.ExtendedErrCode(Connection.Handle) == SQLite3.ExtendedResult.ConstraintNotNull)
-                            throw NotNullConstraintViolationException.New(r, msg, sql: CommandText);
-                        if (SQLite3.ExtendedErrCode(Connection.Handle) == SQLite3.ExtendedResult.ConstraintUnique)
-                            throw UniqueConstraintViolationException.New(r, msg, sql: CommandText);
-                    }
-
-                    throw SQLiteException.New(r, msg, sql: CommandText);
+					throw ex;
                 }
             }
             finally
@@ -3362,12 +3300,12 @@ namespace SQLite
                 var msg = SQLite3.GetErrorMessage(Connection.Handle);
 
                 if ((SQLite3.ExtendedResult)r == SQLite3.ExtendedResult.ConstraintNotNull)
-                        throw NotNullConstraintViolationException.New(r, msg, sql: CommandText);
+					throw new NotNullConstraintViolationException(r, msg, sql: CommandText);
 
                 if ((SQLite3.ExtendedResult)r == SQLite3.ExtendedResult.ConstraintUnique)
-                    throw UniqueConstraintViolationException.New(r, msg, sql: CommandText);
+                    throw new UniqueConstraintViolationException(r, msg, sql: CommandText);
 
-                throw SQLiteException.New(r, msg, sql: CommandText);
+                throw new SQLiteException(r, msg, sql: CommandText);
             }
         }
 
@@ -4727,7 +4665,7 @@ namespace SQLite
 			var r = Sqlite3.sqlite3_prepare_v2(db, query, -1, ref stmt, 0);
 #endif
 			if (r != 0) {
-                throw SQLiteException.New((Result) r, GetErrorMessage(db), sql: query);
+                throw new SQLiteException((Result) r, GetErrorMessage(db), sql: query);
 			}
 			return stmt;
 		}

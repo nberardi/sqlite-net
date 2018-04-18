@@ -169,7 +169,7 @@ namespace SQLite.Tests
 			adb.Tracer = m => {
 				//Console.WriteLine (m);
 				if (m.Trim().EndsWith ("commit"))
-					throw SQLiteException.New (SQLite3.Result.Busy, "Make commit fail");
+					throw new SQLiteException (SQLite3.Result.Busy, "Make commit fail");
 			};
 
 			try {
@@ -211,7 +211,7 @@ namespace SQLite.Tests
 			var rollbacks = 0;
 			db.Tracer = m => {
 				if (m == "ExecuteNonQuery: commit")
-					throw SQLiteException.New (SQLite3.Result.Busy, "Make commit fail");
+					throw new SQLiteException (SQLite3.Result.Busy, "Make commit fail");
 				if (m == "ExecuteNonQuery: rollback")
 					rollbacks++;
 			};
@@ -255,7 +255,7 @@ namespace SQLite.Tests
 			db.Tracer = m => {
 				//Console.WriteLine (m);
 				if (m.StartsWith ("ExecuteNonQuery: release"))
-					throw SQLiteException.New (SQLite3.Result.Busy, "Make release fail");
+					throw new SQLiteException(SQLite3.Result.Busy, "Make release fail");
 				if (m == "ExecuteNonQuery: rollback")
 					rollbacks++;
 			};

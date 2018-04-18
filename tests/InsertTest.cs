@@ -80,6 +80,7 @@ namespace SQLite.Tests
         {
             _db = new TestDb(TestPath.GetTempFileName());
         }
+
         [TearDown]
         public void TearDown()
         {
@@ -104,7 +105,7 @@ namespace SQLite.Tests
 			
 			sw.Stop();
 			
-			Assert.AreEqual(numIn, n, "Num inserted must = num objects");
+			Assert.AreEqual(n, numIn, "Num inserted must = num objects");
 			
 			var inObjs = _db.CreateCommand("select * from TestObj").ExecuteQuery<TestObj>().ToArray();
 			

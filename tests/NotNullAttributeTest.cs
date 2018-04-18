@@ -165,8 +165,8 @@ namespace SQLite.Tests
 					db.Insert (obj);
 				}
 				catch (NotNullConstraintViolationException ex) {
-					string expected = "AnotherRequiredStringProp, RequiredIntProp";
-					string actual = string.Join (", ", ex.Columns.Where (c => !c.IsPK).OrderBy (p => p.PropertyName).Select (c => c.PropertyName));
+					string expected = "RequiredIntProp";
+                    string actual = ex.Column?.PropertyName;
 
 					Assert.AreEqual (expected, actual, "NotNullConstraintViolationException did not correctly list the columns that violated the constraint");
 					return;
@@ -201,7 +201,7 @@ namespace SQLite.Tests
 					}
 					catch (NotNullConstraintViolationException ex) {
 						string expected = "RequiredStringProp";
-						string actual = string.Join (", ", ex.Columns.Where (c => !c.IsPK).OrderBy (p => p.PropertyName).Select (c => c.PropertyName));
+                        string actual = ex.Column?.PropertyName;
 
 						Assert.AreEqual (expected, actual, "NotNullConstraintViolationException did not correctly list the columns that violated the constraint");
 
