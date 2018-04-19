@@ -434,7 +434,6 @@ namespace SQLite
 		/// </returns>
         public TableMapping GetMapping<T>() => TableMapping.GetMapping<T>();
 
-
 		/// <summary>
 		/// Executes a "drop table" on the database.  This is non-recoverable.
 		/// </summary>
@@ -848,6 +847,7 @@ namespace SQLite
         /// Use this method instead of Query when you don't expect rows back. Such cases include
         /// INSERTs, UPDATEs, and DELETEs.
         /// You can set the Trace or TimeExecution properties of the connection
+		/// </summary>
         public int PreparedExecute(string query, params object[] args)
         {
             var cmd = CreateCommand(query, fromCache: true);
@@ -982,6 +982,7 @@ namespace SQLite
 		/// </param>
 		/// <returns>
 		/// An enumerable with one result for each row returned by the query.
+		/// </returns>
         public IEnumerable<object> PreparedQuery(TableMapping map, string query, params object[] args)
         {
             var cmd = CreateCommand(query, fromCache: true);
@@ -989,10 +990,11 @@ namespace SQLite
             return result;
         }
 		
+		/// <summary>
 		/// The enumerator (retrieved by calling GetEnumerator() on the result of this method)
 		/// will call sqlite3_step on each call to MoveNext, so the database
 		/// connection must remain open for the lifetime of the enumerator.
-		/// </returns>
+		/// </summary>
 		public IEnumerable<object> DeferredQuery (TableMapping map, string query, params object[] args)
 		{
             return PreparedQuery(map, query, args);
@@ -3020,13 +3022,9 @@ namespace SQLite
         public static object GetDefaultValue(PropertyInfo p)
         {
             var attrs = p.GetCustomAttributes(typeof(DefaultAttribute), true);
-#if !USE_NEW_REFLECTION_API
-            if (attrs.Length > 0)
-                return ((DefaultAttribute) attrs[0]).Value;
-#else
 			if (attrs.Count() > 0)
 				return ((DefaultAttribute)attrs.First()).Value;
-#endif
+
             return null;
         }
 		

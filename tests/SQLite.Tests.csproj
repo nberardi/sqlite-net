@@ -14,10 +14,11 @@
     <FileAlignment>512</FileAlignment>
     <SolutionDir Condition="$(SolutionDir) == '' Or $(SolutionDir) == '*Undefined*'">..\..\</SolutionDir>
     <RestorePackages>true</RestorePackages>
-    <ReleaseVersion>4.0</ReleaseVersion>
     <NoWarn>1998, 0219, 0414, 1635, 4014, 0618, 0067, 0169</NoWarn>
     <NuGetPackageImportStamp>
     </NuGetPackageImportStamp>
+    <ProductVersion>8.0.30703</ProductVersion>
+    <SchemaVersion>2.0</SchemaVersion>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>True</DebugSymbols>
