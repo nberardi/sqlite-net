@@ -1,4 +1,4 @@
-//
+﻿//
 // Copyright (c) 2009-2017 Krueger Systems, Inc.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -2758,7 +2758,9 @@ namespace SQLite
                 _prop = prop;
                 PropertyName = prop.Name;
                 PropertyType = prop.PropertyType;
-                PropertyDefaultValue = (PropertyType != null && PropertyType.IsValueType && Nullable.GetUnderlyingType(PropertyType) == null) ? Activator.CreateInstance(PropertyType) : null;
+
+                var propertyTypeInfo = PropertyType.GetTypeInfo();
+                PropertyDefaultValue = (PropertyType != null && propertyTypeInfo.IsValueType && Nullable.GetUnderlyingType(PropertyType) == null) ? Activator.CreateInstance(PropertyType) : null;
 
                 _setValue = setValue;
                 _getValue = getValue;
@@ -2815,7 +2817,7 @@ namespace SQLite
         }
     }
 
-    internal class EnumCacheInfo
+    public class EnumCacheInfo
     {
         private Dictionary<int, object> _enumValues;
 
@@ -2848,7 +2850,7 @@ namespace SQLite
         }
 	}
 
-    internal static class EnumCache
+    public static class EnumCache
 	{
         private static readonly Dictionary<Type, EnumCacheInfo> Cache = new Dictionary<Type, EnumCacheInfo>();
 
