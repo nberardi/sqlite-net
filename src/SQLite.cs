@@ -291,10 +291,6 @@ namespace SQLite
 
 			DatabasePath = databasePath;
 
-#if NETFX_CORE
-			SQLite3.SetDirectory(/*temp directory type*/2, Windows.Storage.ApplicationData.Current.TemporaryFolder.Path);
-#endif
-
 			Sqlite3DatabaseHandle handle;
 
 #if SILVERLIGHT || USE_CSHARP_SQLITE || USE_SQLITEPCL_RAW
@@ -773,19 +769,17 @@ namespace SQLite
             return new SQLiteCommand(this, cmdText);
         }
 
-		/// <summary>
-		/// Creates a new SQLiteCommand given the command text with arguments. Place a '?'
-		/// in the command text for each of the arguments.
-		/// </summary>
-		/// <param name="cmdText">
-		/// The fully escaped SQL.
-		/// </param>
-		/// <param name="ps">
-		/// Arguments to substitute for the occurences of '?' in the command text.
-		/// </param>
-		/// <returns>
-		/// A <see cref="SQLiteCommand"/>
-		/// </returns>
+        /// <summary>
+        /// Creates a new SQLiteCommand given the command text with arguments. Place a '?'
+        /// in the command text for each of the arguments.
+        /// </summary>
+        /// <param name="cmdText">
+        /// The fully escaped SQL.
+        /// </param>
+        /// <param name="fromCache"></param>
+        /// <returns>
+        /// A <see cref="SQLiteCommand"/>
+        /// </returns>
         public SQLiteCommand CreateCommand(string cmdText, bool fromCache = false)
 		{
 			if (!_open)
@@ -1219,7 +1213,7 @@ namespace SQLite
 		/// Creates a savepoint in the database at the current point in the transaction timeline.
 		/// Begins a new transaction if one is not in progress.
 		///
-		/// Call <see cref="RollbackTo(string)"/> to undo transactions since the returned savepoint.
+		/// Call <see cref="RollbackTo"/> to undo transactions since the returned savepoint.
 		/// Call <see cref="Release"/> to commit transactions after the savepoint returned here.
 		/// Call <see cref="Commit"/> to end the transaction, committing all changes.
 		/// </summary>
@@ -1266,10 +1260,11 @@ namespace SQLite
             RollbackTo(null, noThrow);
 		}
 
-		/// <summary>
-		/// Rolls back the savepoint created by <see cref="BeginTransaction"/> or SaveTransactionPoint.
-		/// </summary>
+        /// <summary>
+        /// Rolls back the savepoint created by <see cref="BeginTransaction"/> or SaveTransactionPoint.
+        /// </summary>
         /// <param name="savepoint">The name of the savepoint to roll back to, as returned by <see cref="SaveTransactionPoint"/>.  If savepoint is null or empty, this method is equivalent to a call to <see cref="Rollback"/></param>
+        /// <param name="noThrow"></param>
         public void RollbackTo(string savepoint, bool noThrow = false)
         {
             // Rolling back without a TO clause rolls backs all transactions 
@@ -1296,15 +1291,16 @@ namespace SQLite
             // No need to rollback if there are no transactions open.
         }
 
-		/// <summary>
-		/// Releases a savepoint returned from <see cref="SaveTransactionPoint"/>.  Releasing a savepoint
-		///    makes changes since that savepoint permanent if the savepoint began the transaction,
-		///    or otherwise the changes are permanent pending a call to <see cref="Commit"/>.
-		///
-		/// The RELEASE command is like a COMMIT for a SAVEPOINT.
-		/// </summary>
-		/// <param name="savepoint">The name of the savepoint to release.  The string should be the result of a call to <see cref="SaveTransactionPoint"/></param>
-		public void Release (string savepoint, bool rollbackOnFailure = true)
+        /// <summary>
+        /// Releases a savepoint returned from <see cref="SaveTransactionPoint"/>.  Releasing a savepoint
+        ///    makes changes since that savepoint permanent if the savepoint began the transaction,
+        ///    or otherwise the changes are permanent pending a call to <see cref="Commit"/>.
+        ///
+        /// The RELEASE command is like a COMMIT for a SAVEPOINT.
+        /// </summary>
+        /// <param name="savepoint">The name of the savepoint to release.  The string should be the result of a call to <see cref="SaveTransactionPoint"/></param>
+        /// <param name="rollbackOnFailure"></param>
+        public void Release (string savepoint, bool rollbackOnFailure = true)
 		{
 			try
 			{
@@ -1969,6 +1965,7 @@ namespace SQLite
         /// <param name="obj">
         /// The object to update. It must have a primary key designated using the PrimaryKeyAttribute.
         /// </param>
+        /// <param name="extra"></param>
         /// <param name="objType">
         /// The type of object to update.
         /// </param>
@@ -2300,35 +2297,11 @@ namespace SQLite
 		public string DatabasePath { get; private set; }
 		public bool StoreDateTimeAsTicks { get; private set; }
 
-#if NETFX_CORE
-		static readonly string MetroStyleDataPath = Windows.Storage.ApplicationData.Current.LocalFolder.Path;
-
-        public static readonly string[] InMemoryDbPaths = new[]
-        {
-            ":memory:",
-            "file::memory:"
-        };
-
-        public static bool IsInMemoryPath(string databasePath)
-        {
-            return InMemoryDbPaths.Any(i => i.Equals(databasePath, StringComparison.OrdinalIgnoreCase));
-        }
-
-#endif
-
 		public SQLiteConnectionString (string databasePath, bool storeDateTimeAsTicks)
 		{
 			ConnectionString = databasePath;
 			StoreDateTimeAsTicks = storeDateTimeAsTicks;
-
-#if NETFX_CORE
-			DatabasePath = IsInMemoryPath(databasePath)
-                ? databasePath
-                : System.IO.Path.Combine(MetroStyleDataPath, databasePath);
-
-#else
 			DatabasePath = databasePath;
-#endif
 		}
 	}
 

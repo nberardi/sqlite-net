@@ -90,10 +90,11 @@ namespace SQLite
 		/// </summary>
 		public string DatabasePath => GetConnection ().DatabasePath;
 
-		/// <summary>
-		/// Gets the SQLite library version number. 3007014 would be v3.7.14
-		/// </summary>
-		public int LibVersionNumber => GetConnection ().LibVersionNumber;
+        /// <summary>
+        /// Gets the SQLite library version number. 3007014 would be v3.7.14
+        /// </summary>
+        [Obsolete("Use LibraryVersion instead.")]
+        public int LibVersionNumber => GetConnection ().LibVersionNumber;
 
 		/// <summary>
 		/// The amount of time to wait for a table to become unlocked.
@@ -137,10 +138,11 @@ namespace SQLite
 			set { GetConnection ().Tracer = value; }
 		}
 
-		/// <summary>
-		/// Whether Trace lines should be written that show the execution time of queries.
-		/// </summary>
-		public bool TimeExecution {
+        /// <summary>
+        /// Whether Trace lines should be written that show the execution time of queries.
+        /// </summary>
+        [Obsolete("Use TraceTime instead.")]
+        public bool TimeExecution {
 			get { return GetConnection ().TimeExecution; }
 			set { GetConnection ().TimeExecution = value; }
 		}
@@ -1311,6 +1313,9 @@ namespace SQLite
 		}
 	}
 
+    /// <summary>
+    /// 
+    /// </summary>
 	public class SQLiteConnectionPool
 	{
 		class Entry
@@ -1349,6 +1354,12 @@ namespace SQLite
 			}
 		}
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="connectionString"></param>
+        /// <param name="openFlags"></param>
+        /// <returns></returns>
 		public SQLiteConnectionWithLock GetConnection (SQLiteConnectionString connectionString, SQLiteOpenFlags openFlags)
 		{
 			lock (_entriesLock) {
@@ -1364,6 +1375,11 @@ namespace SQLite
 			}
 		}
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="connectionString"></param>
+        /// <param name="openFlags"></param>
 		public void CloseConnection (SQLiteConnectionString connectionString, SQLiteOpenFlags openFlags)
 		{
 			var key = connectionString.ConnectionString;

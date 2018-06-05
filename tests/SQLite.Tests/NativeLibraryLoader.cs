@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
@@ -79,7 +79,7 @@ namespace SQLite.Tests
             yield return AppDomain.CurrentDomain.BaseDirectory;
             yield return Path.Combine(AppDomain.CurrentDomain.BaseDirectory, GetArchitecture());
 
-            var privateBinPath = AppDomain.CurrentDomain.SetupInformation.PrivateBinPath;
+            var privateBinPath = AppDomain.CurrentDomain.RelativeSearchPath;
             if (!string.IsNullOrEmpty(privateBinPath))
             {
                 foreach (var path in privateBinPath.Split(new[] {Path.PathSeparator}, StringSplitOptions.RemoveEmptyEntries))

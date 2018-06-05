@@ -81,13 +81,12 @@ namespace SQLite.Tests
 
             Assert.IsTrue(info.IsEnum);
             Assert.IsTrue(info.StoreAsText);
-            Assert.IsNotNull(info.EnumValues);
 
             var values = Enum.GetValues(typeof(TestEnumStoreAsText)).Cast<object>().ToList();
 
             for (int i = 0; i < values.Count; i++)
             {
-                Assert.AreEqual(values[i].ToString(), info.EnumValues[i]);
+                Assert.AreEqual(values[i].ToString(), info.GetEnumFromInt32Value(i));
             }
         }
 
@@ -98,7 +97,6 @@ namespace SQLite.Tests
 
             Assert.IsTrue(info.IsEnum);
             Assert.IsFalse(info.StoreAsText);
-            Assert.IsNull(info.EnumValues);
         }
 
         [Test]
@@ -117,7 +115,6 @@ namespace SQLite.Tests
 
             Assert.IsFalse(info.IsEnum);
             Assert.IsFalse(info.StoreAsText);
-            Assert.IsNull(info.EnumValues);
         }
 
 		[Test]
@@ -127,7 +124,6 @@ namespace SQLite.Tests
 
 			Assert.IsTrue (info.IsEnum);
 			Assert.IsFalse (info.StoreAsText);
-			Assert.IsNull (info.EnumValues);
 		}
 
 		[Test]
@@ -137,7 +133,6 @@ namespace SQLite.Tests
 
 			Assert.IsTrue (info.IsEnum);
 			Assert.IsTrue (info.StoreAsText);
-			Assert.IsNotNull (info.EnumValues);
 		}
 	}
 }

@@ -1,20 +1,20 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>netstandard1.6</TargetFramework>
+    <TargetFramework>netstandard2.0</TargetFramework>
   </PropertyGroup>
 
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugType>full</DebugType>
-    <DefineConstants>TRACE;DEBUG;NETSTANDARD2_0;USE_SQLITEPCL_RAW;NETSTANDARD1_6;NETFX_CORE</DefineConstants>
+    <DefineConstants>TRACE;DEBUG;USE_SQLITEPCL_RAW</DefineConstants>
     <DocumentationFile>bin\Debug\netstandard2.0\sqlite-net.xml</DocumentationFile>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType></DebugType>
-    <DefineConstants>TRACE;RELEASE;NETSTANDARD2_0;USE_SQLITEPCL_RAW;RELEASE;NETSTANDARD1_6;NETFX_CORE</DefineConstants>
+    <DefineConstants>TRACE;RELEASE;USE_SQLITEPCL_RAW</DefineConstants>
     <DocumentationFile>bin\Release\netstandard2.0\sqlite-net.xml</DocumentationFile>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="SQLitePCLRaw.bundle_green" Version="1.1.10" />
+    <PackageReference Include="SQLitePCLRaw.bundle_green" Version="1.1.11" />
   </ItemGroup>
 </Project>
