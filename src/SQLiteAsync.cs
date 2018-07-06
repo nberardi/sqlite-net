@@ -35,10 +35,10 @@ namespace SQLite
 	/// </summary>
 	public partial class SQLiteAsyncConnection
 	{
-		SQLiteConnectionString _connectionString;
-		SQLiteConnectionWithLock _fullMutexReadConnection;
-		bool isFullMutex;
-		SQLiteOpenFlags _openFlags;
+		private SQLiteConnectionString _connectionString;
+		private SQLiteConnectionWithLock _fullMutexReadConnection;
+		private bool isFullMutex;
+		private SQLiteOpenFlags _openFlags;
 
 		/// <summary>
 		/// Constructs a new SQLiteAsyncConnection and opens a pooled SQLite database specified by databasePath.
