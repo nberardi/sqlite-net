@@ -55,7 +55,7 @@ namespace SQLite.Tests
                     if (throwWhenNotExists)
                         throw new DllNotFoundException(msg, loadExc);
                     else
-                        Trace.Fail(msg, loadExc.ToString());
+                        Trace.Fail(msg, loadExc?.ToString());
                 }
 
                 return found && loaded;
