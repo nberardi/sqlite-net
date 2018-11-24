@@ -466,25 +466,23 @@ namespace SQLite.Tests
 		}
 
 		[Test]
-		public void TestInsertAllAsync ()
+		public async Task TestInsertAllAsync ()
 		{
 			// create a bunch of customers...
-			List<Customer> customers = new List<Customer> ();
-			for (int index = 0; index < 100; index++) {
-				Customer customer = new Customer ();
-				customer.FirstName = "foo";
-				customer.LastName = "bar";
-				customer.Email = Guid.NewGuid ().ToString ();
-				customers.Add (customer);
-			}
+			var n = 100;
+			var customers = Enumerable.Range(0, n).Select(x => new Customer() {
+				FirstName = "foo",
+				LastName = "bar",
+				Email = Guid.NewGuid ().ToString ()
+			}).ToList();
 
 			// connect...
 			string path = null;
 			var conn = GetConnection (ref path);
-			conn.CreateTableAsync<Customer> ().Wait ();
+			await conn.CreateTableAsync<Customer>();
 
 			// insert them all...
-			conn.InsertAllAsync (customers).Wait ();
+			await conn.InsertAllAsync (customers);
 
 			// check...
 			using (SQLiteConnection check = new SQLiteConnection (path)) {

@@ -2819,7 +2819,12 @@ namespace SQLite
 
         public object GetEnumFromInt32Value(int value)
         {
-            return _enumValues[value];
+            var val = _enumValues[value];
+
+			if (StoreAsText)
+				return val.ToString();
+
+			return val;
         }
 	}
 

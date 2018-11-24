@@ -91,11 +91,10 @@ namespace SQLite.Tests
         public void InsertALot()
         {
 			int n = 10000;
-			var q =	from i in Enumerable.Range(1, n)
-					select new TestObj() {
+			var objs = Enumerable.Range(1, n).Select(x => new TestObj() {
 				Text = "I am"
-			};
-			var objs = q.ToArray();
+			}).ToList();
+
 			_db.Trace = false;
 			
 			var sw = new Stopwatch();
@@ -107,17 +106,16 @@ namespace SQLite.Tests
 			
 			Assert.AreEqual(n, numIn, "Num inserted must = num objects");
 			
-			var inObjs = _db.CreateCommand("select * from TestObj").ExecuteQuery<TestObj>().ToArray();
+			var numCount = _db.ExecuteScalar<int>("select count(*) from TestObj");
 			
-			for (var i = 0; i < inObjs.Length; i++) {
-				Assert.AreEqual(i+1, objs[i].Id);
+			Assert.AreEqual(numCount, n, "Num counted must = num objects");
+
+			var inObjs = _db.Query<TestObj>("select * from TestObj").ToList();
+			
+			for (var i = 0; i < inObjs.Count; i++) {
 				Assert.AreEqual(i+1, inObjs[i].Id);
 				Assert.AreEqual("I am", inObjs[i].Text);
 			}
-			
-			var numCount = _db.CreateCommand("select count(*) from TestObj").ExecuteScalar<int>();
-			
-			Assert.AreEqual(numCount, n, "Num counted must = num objects");
         }
 
 		[Test]
