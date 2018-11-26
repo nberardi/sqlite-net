@@ -477,7 +477,7 @@ namespace SQLite.Tests
 			}).ToList();
 
 			// connect...
-			string path = null;
+			var path = (string)null;
 			var conn = GetConnection (ref path);
 			await conn.CreateTableAsync<Customer>();
 
@@ -485,12 +485,11 @@ namespace SQLite.Tests
 			await conn.InsertAllAsync (customers);
 
 			// check...
-			using (SQLiteConnection check = new SQLiteConnection (path)) {
-				for (int index = 0; index < customers.Count; index++) {
-					// load it back and check...
-					Customer loaded = check.Get<Customer> (customers[index].Id);
-					Assert.AreEqual (loaded.Email, customers[index].Email);
-				}
+			var customersDb = await conn.QueryAsync<Customer>("select * from Customer");
+			Assert.That(customersDb.Count, Is.EqualTo(n));
+
+			foreach(var customer in customersDb) {
+				Assert.That(customers.Any(x => x.Email == customer.Email));
 			}
 		}
 

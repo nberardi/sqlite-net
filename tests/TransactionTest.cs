@@ -136,7 +136,7 @@ namespace SQLite.Tests
 			adb.Trace = true;
 			adb.Tracer = m => {
 				Console.WriteLine (m);
-				if (m == "Executing: rollback")
+				if (m.Contains("rollback"))
 					rollbacks++;
 			};
 
