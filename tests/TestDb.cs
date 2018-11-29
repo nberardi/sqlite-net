@@ -1,15 +1,6 @@
 using System;
 using System.IO;
 
-#if NETFX_CORE
-class DescriptionAttribute : Attribute
-{
-	public DescriptionAttribute (string desc)
-	{
-	}
-}
-#endif
-
 namespace SQLite.Tests
 {
 	public class Product
@@ -68,12 +59,7 @@ namespace SQLite.Tests
 	{
 		public static string GetTempFileName ()
 		{
-#if NETFX_CORE
-			var name = Guid.NewGuid () + ".sqlite";
-			return Path.Combine (Windows.Storage.ApplicationData.Current.LocalFolder.Path, name);
-#else
 			return Path.GetTempFileName ();
-#endif
 		}
 	}
 }
