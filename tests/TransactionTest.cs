@@ -1,16 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-
-#if NETFX_CORE
-using Microsoft.VisualStudio.TestTools.UnitTesting;
-using SetUp = Microsoft.VisualStudio.TestTools.UnitTesting.TestInitializeAttribute;
-using TearDown = Microsoft.VisualStudio.TestTools.UnitTesting.TestCleanupAttribute;
-using TestFixture = Microsoft.VisualStudio.TestTools.UnitTesting.TestClassAttribute;
-using Test = Microsoft.VisualStudio.TestTools.UnitTesting.TestMethodAttribute;
-#else
 using NUnit.Framework;
-#endif
 
 namespace SQLite.Tests
 {
@@ -120,79 +111,6 @@ namespace SQLite.Tests
 			}
 
 			Assert.AreEqual(testObjects.Count, db.Table<TestObj>().Count());
-		}
-
-		[Test]
-		public void Issue329_AsyncTransactionFailuresShouldRollback ()
-		{
-			var adb = new SQLiteAsyncConnection (TestPath.GetTempFileName ());
-			adb.CreateTableAsync<TestObj> ().Wait ();
-			var initialCount = adb.Table<TestObj> ().CountAsync ().Result;
-			var rollbacks = 0;
-
-			//
-			// Fail a commit
-			//
-			adb.Trace = true;
-			adb.Tracer = m => {
-				Console.WriteLine (m);
-				if (m.Contains("rollback"))
-					rollbacks++;
-			};
-
-			try {
-				adb.RunInTransactionAsync (db => {
-					db.Insert (new TestObj ());
-					throw new Exception ("User exception");
-				}).Wait ();
-				Assert.Fail ("Should have thrown");
-			}
-			catch (AggregateException aex)
-				when (aex.InnerException.Message == "User exception") {
-				// Expected
-			}
-
-			Assert.AreEqual (1, rollbacks);
-		}
-
-		[Test]
-		public void Issue604_RunInTransactionAsync ()
-		{
-			var adb = new SQLiteAsyncConnection (TestPath.GetTempFileName ());
-			adb.CreateTableAsync<TestObj> ().Wait ();
-			var initialCount = adb.Table<TestObj> ().CountAsync ().Result;
-
-			//
-			// Fail a commit
-			//
-			adb.Trace = true;
-			adb.Tracer = m => {
-				//Console.WriteLine (m);
-				if (m.Trim().EndsWith ("commit"))
-					throw new SQLiteException (SQLite3.Result.Busy, "Make commit fail");
-			};
-
-			try {
-				adb.RunInTransactionAsync (db => {
-					db.Insert (new TestObj ());
-				}).Wait ();
-				Assert.Fail ("Should have thrown");
-			}
-			catch (AggregateException aex)
-				when (aex.InnerException is SQLiteException ex
-			          && ex.Result == SQLite3.Result.Busy) {
-				// Expected
-			}
-
-			//
-			// Are we stuck?
-			//
-			adb.Tracer = null;
-			adb.RunInTransactionAsync (db => {
-				db.Insert (new TestObj ());
-			}).Wait ();
-
-			Assert.AreEqual (initialCount + 1, adb.Table<TestObj> ().CountAsync ().Result);
 		}
 
 		[Test]

@@ -1,13 +1,5 @@
 ﻿using System;
-
-#if NETFX_CORE
-using Microsoft.VisualStudio.TestTools.UnitTesting;
-using SetUp = Microsoft.VisualStudio.TestTools.UnitTesting.TestInitializeAttribute;
-using TestFixture = Microsoft.VisualStudio.TestTools.UnitTesting.TestClassAttribute;
-using Test = Microsoft.VisualStudio.TestTools.UnitTesting.TestMethodAttribute;
-#else
 using NUnit.Framework;
-#endif
 
 namespace SQLite.Tests
 {
@@ -36,37 +28,6 @@ namespace SQLite.Tests
 		{
 			var db = new TestDb (storeDateTimeAsTicks: false);			
 			TestDateTime (db);
-		}
-
-		[Test]
-		public void AsyncAsTicks ()
-		{
-			var db = new SQLiteAsyncConnection (TestPath.GetTempFileName (), true);
-			TestAsyncDateTime (db);
-		}
-
-		[Test]
-		public void AsyncAsString ()
-		{
-			var db = new SQLiteAsyncConnection (TestPath.GetTempFileName (), false);
-			TestAsyncDateTime (db);
-		}
-
-		void TestAsyncDateTime (SQLiteAsyncConnection db)
-		{
-			db.CreateTableAsync<TestObj> ().Wait ();
-
-			TestObj o, o2;
-
-			//
-			// Ticks
-			//
-			o = new TestObj {
-				ModifiedTime = new DateTime (2012, 1, 14, 3, 2, 1, 234),
-			};
-			db.InsertAsync (o).Wait ();
-			o2 = db.GetAsync<TestObj> (o.Id).Result;
-			Assert.AreEqual (o.ModifiedTime, o2.ModifiedTime);
 		}
 
 		void TestDateTime (TestDb db)
