@@ -297,7 +297,7 @@ namespace SQLite
 		/// </summary>
 		/// <returns>The quoted string.</returns>
 		/// <param name="unsafeString">The unsafe string to quote.</param>
-		static string Quote (string unsafeString)
+		private static string Quote (string unsafeString)
 		{
 			// TODO: Doesn't call sqlite3_mprintf("%Q", u) because we're waiting on https://github.com/ericsink/SQLitePCL.raw/issues/153
 			if (unsafeString == null) return "NULL";
@@ -393,10 +393,7 @@ namespace SQLite
 		/// <summary>
 		/// Executes a "drop table" on the database.  This is non-recoverable.
 		/// </summary>
-		public int DropTable<T> ()
-		{
-            return DropTable(GetMapping<T>());
-		}
+		public int DropTable<T> () => DropTable(GetMapping<T>());
 
 		/// <summary>
 		/// Executes a "drop table" on the database.  This is non-recoverable.
@@ -404,10 +401,9 @@ namespace SQLite
 		/// <param name="map">
 		/// The TableMapping used to identify the table.
 		/// </param>
-		public int DropTable (TableMapping map)
+		public int DropTable (TableMapping map) 
 		{
-			var query = string.Format ("drop table if exists \"{0}\"", map.TableName);
-			return Execute (query);
+			return Execute($"drop table if exists \"{map.TableName}\"");
 		}
 
 		/// <summary>
@@ -419,10 +415,7 @@ namespace SQLite
 		/// <returns>
 		/// Whether the table was created or migrated.
 		/// </returns>
-		public CreateTableResult CreateTable<T> (CreateFlags createFlags = CreateFlags.None)
-		{
-			return CreateTable (typeof (T), createFlags);
-		}
+		public CreateTableResult CreateTable<T> (CreateFlags createFlags = CreateFlags.None) => CreateTable(typeof (T), createFlags);
 
 		/// <summary>
 		/// Executes a "create table if not exists" on the database. It also
@@ -607,10 +600,7 @@ namespace SQLite
 		/// <param name="tableName">Name of the database table</param>
 		/// <param name="columnName">Name of the column to index</param>
 		/// <param name="unique">Whether the index should be unique</param>
-        public bool CreateIndex(string indexName, string tableName, string columnName, bool unique = false)
-		{
-			return CreateIndex (indexName, tableName, new string[] { columnName }, unique);
-		}
+        public bool CreateIndex(string indexName, string tableName, string columnName, bool unique = false) => CreateIndex (indexName, tableName, new string[] { columnName }, unique);
 
 		/// <summary>
 		/// Creates an index for the specified table and column.
@@ -618,10 +608,7 @@ namespace SQLite
 		/// <param name="tableName">Name of the database table</param>
 		/// <param name="columnName">Name of the column to index</param>
 		/// <param name="unique">Whether the index should be unique</param>
-        public bool CreateIndex(string tableName, string columnName, bool unique = false)
-		{
-			return CreateIndex (tableName + "_" + columnName, tableName, columnName, unique);
-		}
+        public bool CreateIndex(string tableName, string columnName, bool unique = false) => CreateIndex (tableName + "_" + columnName, tableName, columnName, unique);
 
 		/// <summary>
 		/// Creates an index for the specified table and columns.
@@ -629,10 +616,7 @@ namespace SQLite
 		/// <param name="tableName">Name of the database table</param>
 		/// <param name="columnNames">An array of column names to index</param>
 		/// <param name="unique">Whether the index should be unique</param>
-        public bool CreateIndex(string tableName, string[] columnNames, bool unique = false)
-		{
-			return CreateIndex (tableName + "_" + string.Join ("_", columnNames), tableName, columnNames, unique);
-		}
+        public bool CreateIndex(string tableName, string[] columnNames, bool unique = false) => CreateIndex (tableName + "_" + string.Join ("_", columnNames), tableName, columnNames, unique);
 
 		/// <summary>
 		/// Creates an index for the specified object property.
@@ -675,7 +659,7 @@ namespace SQLite
             public string ColumnType { get; set; }
 
             [Column ("notnull")]
-            public int notnull { get; set; }
+            public int NotNull { get; set; }
 
             //public string dflt_value { get; set; }
 
@@ -690,13 +674,12 @@ namespace SQLite
 		/// </summary>
 		/// <returns>The columns contains in the table.</returns>
 		/// <param name="tableName">Table name.</param>
-		public List<ColumnInfo> GetTableInfo (string tableName)
+		public List<ColumnInfo> GetTableInfo (string tableName) 
 		{
-			var query = "pragma table_info(\"" + tableName + "\")";
-			return Query<ColumnInfo> (query);
+			return Query<ColumnInfo> ($"pragma table_info(\"{tableName}\")");
 		}
 
-		void MigrateTable (TableMapping map, List<ColumnInfo> existingCols)
+		private void MigrateTable (TableMapping map, List<ColumnInfo> existingCols)
 		{
 			var toBeAdded = new List<TableMapping.Column> ();
 
@@ -724,10 +707,7 @@ namespace SQLite
         /// <seealso cref="SQLiteCommand.OnExecutionStarted"/>
         /// <seealso cref="SQLiteCommand.OnInstanceCreated"/>
         /// <seealso cref="SQLiteCommand.OnExecutionEnded"/>
-        protected virtual SQLiteCommand NewCommand(string cmdText)
-        {
-            return new SQLiteCommand(this, cmdText);
-        }
+        protected virtual SQLiteCommand NewCommand(string cmdText) => new SQLiteCommand(this, cmdText);
 
         /// <summary>
         /// Creates a new SQLiteCommand given the command text with arguments. Place a '?'
@@ -752,6 +732,7 @@ namespace SQLite
                 cmd = NewCommand(cmdText);
             return cmd;
         }
+		
         private SQLiteCommand GetCachedCommand(string commandName)
         {
             SQLiteCommand cachedCommand;
@@ -1118,9 +1099,7 @@ namespace SQLite
 		/// <summary>
 		/// Whether <see cref="BeginTransaction"/> has been called and the database is waiting for a <see cref="Commit"/>.
 		/// </summary>
-		public bool IsInTransaction {
-			get { return _transactionDepth > 0; }
-		}
+		public bool IsInTransaction => _transactionDepth > 0;
 
 		/// <summary>
 		/// Begins a new transaction. Call <see cref="Commit"/> to end the transaction.
@@ -1215,10 +1194,7 @@ namespace SQLite
 		/// <summary>
 		/// Rolls back the transaction that was begun by <see cref="BeginTransaction"/> or <see cref="SaveTransactionPoint"/>.
 		/// </summary>
-        public void Rollback(bool noThrow = false)
-		{
-            RollbackTo(null, noThrow);
-		}
+        public void Rollback(bool noThrow = false) => RollbackTo(null, noThrow);
 
         /// <summary>
         /// Rolls back the savepoint created by <see cref="BeginTransaction"/> or SaveTransactionPoint.
