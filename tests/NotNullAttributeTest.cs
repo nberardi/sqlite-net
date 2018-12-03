@@ -97,7 +97,7 @@ namespace SQLite.Tests
 					return;
 				}
 				catch (SQLiteException ex) {
-					if (SQLite3.LibVersionNumber () < 3007017 && ex.Result == SQLite3.Result.Constraint) {
+					if (SQLite3.LibraryVersionInt32 < 3007017 && ex.Result == Result.Constraint) {
 						Inconclusive ();
 						return;
 					}
@@ -128,7 +128,7 @@ namespace SQLite.Tests
 					return;
 				}
 				catch (SQLiteException ex) {
-					if (SQLite3.LibVersionNumber () < 3007017 && ex.Result == SQLite3.Result.Constraint) {
+					if (SQLite3.LibraryVersionInt32 < 3007017 && ex.Result == Result.Constraint) {
 						Inconclusive ();
 						return;
 					}
@@ -156,7 +156,7 @@ namespace SQLite.Tests
 					return;
 				}
 				catch (SQLiteException ex) {
-					if (SQLite3.LibVersionNumber () < 3007017 && ex.Result == SQLite3.Result.Constraint) {
+					if (SQLite3.LibraryVersionInt32 < 3007017 && ex.Result == Result.Constraint) {
 						Inconclusive ();
 						return;
 					}
@@ -192,7 +192,7 @@ namespace SQLite.Tests
 						return;
 					}
 					catch (SQLiteException ex) {
-						if (SQLite3.LibVersionNumber () < 3007017 && ex.Result == SQLite3.Result.Constraint) {
+						if (SQLite3.LibraryVersionInt32 < 3007017 && ex.Result == Result.Constraint) {
 							Inconclusive ();
 							return;
 						}
@@ -208,7 +208,7 @@ namespace SQLite.Tests
 		public void InsertQueryWithNullThrowsException ()
 		{
 			// Skip this test if the Dll doesn't support the extended SQLITE_CONSTRAINT codes
-			if (SQLite3.LibVersionNumber () >= 3007017) {
+			if (SQLite3.LibraryVersionInt32 >= 3007017) {
 				using (TestDb db = new TestDb ()) {
 
 					db.CreateTable<NotNullNoPK> ();
@@ -221,7 +221,7 @@ namespace SQLite.Tests
 						return;
 					}
 					catch (SQLiteException ex) {
-						if (SQLite3.LibVersionNumber () < 3007017 && ex.Result == SQLite3.Result.Constraint) {
+						if (SQLite3.LibraryVersionInt32 < 3007017 && ex.Result == Result.Constraint) {
 							Inconclusive ();
 							return;
 						}
@@ -253,7 +253,7 @@ namespace SQLite.Tests
 					return;
 				}
 				catch (SQLiteException ex) {
-					if (SQLite3.LibVersionNumber () < 3007017 && ex.Result == SQLite3.Result.Constraint) {
+					if (SQLite3.LibraryVersionInt32 < 3007017 && ex.Result == Result.Constraint) {
 						Inconclusive ();
 						return;
 					}
@@ -290,7 +290,7 @@ namespace SQLite.Tests
 					return;
 				}
 				catch (SQLiteException ex) {
-					if (SQLite3.LibVersionNumber () < 3007017 && ex.Result == SQLite3.Result.Constraint) {
+					if (SQLite3.LibraryVersionInt32 < 3007017 && ex.Result == Result.Constraint) {
 						Inconclusive ();
 						return;
 					}

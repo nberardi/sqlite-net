@@ -129,7 +129,7 @@ namespace SQLite.Tests
 			var rollbacks = 0;
 			db.Tracer = m => {
 				if (m == "ExecuteNonQuery: commit")
-					throw new SQLiteException (SQLite3.Result.Busy, "Make commit fail");
+					throw new SQLiteException (Result.Busy, "Make commit fail");
 				if (m == "ExecuteNonQuery: rollback")
 					rollbacks++;
 			};
@@ -139,7 +139,7 @@ namespace SQLite.Tests
 				db.Commit ();
 				Assert.Fail ("Should have thrown");
 			}
-			catch (SQLiteException ex) when (ex.Result == SQLite3.Result.Busy) {
+			catch (SQLiteException ex) when (ex.Result == Result.Busy) {
 				db.Tracer = null;
 			}
 			Assert.False (db.IsInTransaction);
@@ -173,7 +173,7 @@ namespace SQLite.Tests
 			db.Tracer = m => {
 				//Console.WriteLine (m);
 				if (m.StartsWith ("ExecuteNonQuery: release"))
-					throw new SQLiteException(SQLite3.Result.Busy, "Make release fail");
+					throw new SQLiteException(Result.Busy, "Make release fail");
 				if (m == "ExecuteNonQuery: rollback")
 					rollbacks++;
 			};
@@ -183,7 +183,7 @@ namespace SQLite.Tests
 				db.Release (sp0);
 				Assert.Fail ("Should have thrown");
 			}
-			catch (SQLiteException ex) when (ex.Result == SQLite3.Result.Busy) {
+			catch (SQLiteException ex) when (ex.Result == Result.Busy) {
 				db.Tracer = null;
 			}
 			Assert.False (db.IsInTransaction);
