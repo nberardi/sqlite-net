@@ -41,14 +41,14 @@ namespace SQLite.Tests
 									 Name = prop.Name,
 									 NotNull = ((prop.GetCustomAttributes (typeof (NotNullAttribute), true).Count () == 0) && (prop.GetCustomAttributes (typeof (PrimaryKeyAttribute), true).Count () == 0)) ? 0 : 1
 								 };
-								 
+
 			return expectedValues;
 		}
 
 		[Test]
 		public void PrimaryKeyHasNotNullConstraint ()
 		{
-			using (TestDb db = new TestDb ()) {
+			using (SQLiteConnection db = TestDb.GetMemoryDb()) {
 
 				db.CreateTable<ClassWithPK> ();
 				var cols = db.GetTableInfo ("ClassWithPK");
@@ -67,7 +67,7 @@ namespace SQLite.Tests
 		[Test]
 		public void CreateTableWithNotNullConstraints ()
 		{
-			using (var db = new TestDb ()) {
+			using (var db = TestDb.GetMemoryDb()) {
 				db.CreateTable<NotNullNoPK> ();
 				var cols = db.GetTableInfo ("NotNullNoPK");
 
@@ -85,7 +85,7 @@ namespace SQLite.Tests
 		[Test]
 		public void InsertWithNullsThrowsException ()
 		{
-			using (TestDb db = new TestDb ()) {
+			using (SQLiteConnection db = TestDb.GetMemoryDb()) {
 
 				db.CreateTable<NotNullNoPK> ();
 
@@ -110,7 +110,7 @@ namespace SQLite.Tests
 		[Test]
 		public void UpdateWithNullThrowsException ()
 		{
-			using (TestDb db = new TestDb ()) {
+			using (SQLiteConnection db = TestDb.GetMemoryDb()) {
 
 				db.CreateTable<NotNullNoPK> ();
 
@@ -140,7 +140,7 @@ namespace SQLite.Tests
 		[Test]
 		public void NotNullConstraintExceptionListsOffendingColumnsOnInsert ()
 		{
-			using (TestDb db = new TestDb ()) {
+			using (SQLiteConnection db = TestDb.GetMemoryDb()) {
 
 				db.CreateTable<NotNullNoPK> ();
 
@@ -170,7 +170,7 @@ namespace SQLite.Tests
 		{
 			// Skip this test if the Dll doesn't support the extended SQLITE_CONSTRAINT codes
 
-				using (TestDb db = new TestDb ()) {
+				using (SQLiteConnection db = TestDb.GetMemoryDb()) {
 					db.CreateTable<NotNullNoPK> ();
 
 					try {
@@ -209,7 +209,7 @@ namespace SQLite.Tests
 		{
 			// Skip this test if the Dll doesn't support the extended SQLITE_CONSTRAINT codes
 			if (SQLite3.LibraryVersionInt32 >= 3007017) {
-				using (TestDb db = new TestDb ()) {
+				using (SQLiteConnection db = TestDb.GetMemoryDb()) {
 
 					db.CreateTable<NotNullNoPK> ();
 
@@ -238,7 +238,7 @@ namespace SQLite.Tests
 		public void UpdateQueryWithNullThrowsException ()
 		{
 			// Skip this test if the Dll doesn't support the extended SQLITE_CONSTRAINT codes
-			using (TestDb db = new TestDb ()) {
+			using (SQLiteConnection db = TestDb.GetMemoryDb()) {
 
 				db.CreateTable<NotNullNoPK> ();
 
@@ -268,7 +268,7 @@ namespace SQLite.Tests
 		[Test]
 		public void ExecuteNonQueryWithNullThrowsException ()
 		{
-			using (TestDb db = new TestDb ()) {
+			using (SQLiteConnection db = TestDb.GetMemoryDb()) {
 
 				db.CreateTable<NotNullNoPK> ();
 

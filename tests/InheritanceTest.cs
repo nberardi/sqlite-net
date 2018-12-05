@@ -25,7 +25,7 @@ namespace SQLite.Tests
 		[Test]
 		public void InheritanceWorks ()
 		{
-			var db = new TestDb ();
+			var db = TestDb.GetMemoryDb();
 			
 			var mapping = db.GetMapping<Derived> ();
 			

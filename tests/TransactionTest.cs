@@ -8,7 +8,7 @@ namespace SQLite.Tests
 	[TestFixture]
 	public class TransactionTest
 	{
-		private TestDb db;
+		private SQLiteConnection db;
 		private List<TestObj> testObjects;
 
 		public class TestObj
@@ -26,20 +26,19 @@ namespace SQLite.Tests
 		{
 		}
 
-		public class TestDb : SQLiteConnection
-		{
-			public TestDb(String path) : base(path)
-			{
-				CreateTable<TestObj>();
-			}
-		}
+        private SQLiteConnection GetConnection() {
+            var db = TestDb.GetMemoryDb();
+            var response = db.CreateTable<TestObj>();
+            Assert.That(response, Is.EqualTo(CreateTableResult.Created));
+            return db;
+        }
 
 		[SetUp]
 		public void Setup()
 		{
 			testObjects = Enumerable.Range(1, 20).Select(i => new TestObj()).ToList();
 
-			db = new TestDb(TestPath.GetTempFileName());
+			db = GetConnection();
 			db.InsertAll(testObjects);
 		}
 

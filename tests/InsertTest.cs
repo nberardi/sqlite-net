@@ -11,11 +11,11 @@ using NUnit.Framework;
 using System.Diagnostics;
 
 namespace SQLite.Tests
-{    
+{
     [TestFixture]
     public class InsertTest
     {
-        private TestDb _db;
+        private SQLiteConnection _db;
 
         public class TestObj
         {
@@ -55,22 +55,23 @@ namespace SQLite.Tests
 			public int Id { get; set; }
 		}
 
-        public class TestDb : SQLiteConnection
-        {
-            public TestDb(String path)
-                : base(path)
-            {
-				CreateTable<TestObj>();
-                CreateTable<TestObj2>();
-                CreateTable<OneColumnObj>();
-				CreateTable<UniqueObj>();
-            }
+        private SQLiteConnection GetConnection() {
+            var db = TestDb.GetMemoryDb();
+            var response = db.CreateTable<TestObj>();
+            Assert.That(response, Is.EqualTo(CreateTableResult.Created));
+            response = db.CreateTable<TestObj2>();
+            Assert.That(response, Is.EqualTo(CreateTableResult.Created));
+            response = db.CreateTable<OneColumnObj>();
+            Assert.That(response, Is.EqualTo(CreateTableResult.Created));
+            response = db.CreateTable<UniqueObj>();
+            Assert.That(response, Is.EqualTo(CreateTableResult.Created));
+            return db;
         }
-		
+
         [SetUp]
         public void Setup()
         {
-            _db = new TestDb(TestPath.GetTempFileName());
+            _db = GetConnection();
         }
 
         [TearDown]
@@ -88,22 +89,22 @@ namespace SQLite.Tests
 			}).ToList();
 
 			_db.Trace = false;
-			
+
 			var sw = new Stopwatch();
 			sw.Start();
-			
+
 			var numIn = _db.InsertAll(objs);
-			
+
 			sw.Stop();
-			
+
 			Assert.AreEqual(n, numIn, "Num inserted must = num objects");
-			
+
 			var numCount = _db.ExecuteScalar<int>("select count(*) from TestObj");
-			
+
 			Assert.AreEqual(numCount, n, "Num counted must = num objects");
 
 			var inObjs = _db.Query<TestObj>("select * from TestObj").ToList();
-			
+
 			for (var i = 0; i < inObjs.Count; i++) {
 				Assert.AreEqual(i+1, inObjs[i].Id);
 				Assert.AreEqual("I am", inObjs[i].Text);
@@ -175,8 +176,8 @@ namespace SQLite.Tests
             var obj3 = new TestObj2() { Id=1, Text = "Done testing" };
 
             _db.Insert(obj1);
-            
-            
+
+
             try {
                 _db.Insert(obj2);
                 Assert.Fail("Expected unique constraint violation");

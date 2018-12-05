@@ -13,12 +13,12 @@ namespace SQLite.Tests
     [TestFixture]
     public class JoinTest
     {
-		TestDb _db;
+		SQLiteConnection _db;
 		
 		[SetUp]
 		public void SetUp ()
 		{
-			_db = new TestDb ();
+			_db = TestDb.GetMemoryDb();
 			_db.CreateTable<Product> ();
 			_db.CreateTable<Order> ();
 			_db.CreateTable<OrderLine> ();

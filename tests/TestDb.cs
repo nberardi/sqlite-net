@@ -42,25 +42,15 @@ namespace SQLite.Tests
 		Shipped = 100
 	}
 
-	public class TestDb : SQLiteConnection
-	{
-		public TestDb (bool storeDateTimeAsTicks = true) : base (TestPath.GetTempFileName (), storeDateTimeAsTicks)
-		{
-			Trace = true;
-		}
+    public static class TestDb
+    {
+        public static SQLiteConnection GetFileSystemDb (bool storeDateTimeAsTicks = true) => new SQLiteConnection(Path.GetTempFileName(), storeDateTimeAsTicks: storeDateTimeAsTicks) {
+            Trace = true
+        };
+        public static SQLiteConnection GetMemoryDb (bool storeDateTimeAsTicks = true) => new SQLiteConnection(":memory:", storeDateTimeAsTicks: storeDateTimeAsTicks) {
+            Trace = true
+        };
 
-		public TestDb (string path, bool storeDateTimeAsTicks = true) : base (path, storeDateTimeAsTicks)
-		{
-			Trace = true;
-		}
-	}
-
-	public class TestPath
-	{
-		public static string GetTempFileName ()
-		{
-			return Path.GetTempFileName ();
-		}
-	}
+    }
 }
 

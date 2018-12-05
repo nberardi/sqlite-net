@@ -22,7 +22,7 @@ namespace SQLite.Tests
 		[Test]
 		public void HasGoodNames ()
 		{
-			var db = new TestDb ();
+			var db = TestDb.GetMemoryDb();
 
 			db.CreateTable<AFunnyTableName> ();
 
@@ -54,7 +54,7 @@ namespace SQLite.Tests
 		[Test]
 		public void OverrideNames ()
 		{
-			var db = new TestDb ();
+			var db = TestDb.GetMemoryDb();
 			db.CreateTable<OverrideNamesClass> ();
 
 			var cols = db.GetTableInfo ("OverrideNamesClass");
@@ -87,7 +87,7 @@ namespace SQLite.Tests
 		[Test]
 		public void Issue86 ()
 		{
-			var db = new TestDb ();
+			var db = TestDb.GetMemoryDb();
 			db.CreateTable<Foo> ();
 
 			db.Insert (new Foo { Bar = 42 });
@@ -115,7 +115,7 @@ namespace SQLite.Tests
 		[Test]
 		public void OnlyKey ()
 		{
-			var db = new TestDb ();
+			var db = TestDb.GetMemoryDb();
 			db.CreateTable<OnlyKeyModel> ();
 
 			db.InsertOrReplace (new OnlyKeyModel { MyModelId = "Foo" });

@@ -9,72 +9,75 @@ namespace SQLite.Tests
 	[TestFixture]
 	public class LinqTest
 	{
-		TestDb CreateDb ()
-		{
-			var db = new TestDb ();
-			db.CreateTable<Product> ();
-			db.CreateTable<Order> ();
-			db.CreateTable<OrderLine> ();
-			db.CreateTable<OrderHistory> ();
-			return db;
-		}
-		
+        private SQLiteConnection GetConnection() {
+            var db = TestDb.GetMemoryDb();
+            var response = db.CreateTable<Product>();
+            Assert.That(response, Is.EqualTo(CreateTableResult.Created));
+            response = db.CreateTable<Order>();
+            Assert.That(response, Is.EqualTo(CreateTableResult.Created));
+            response = db.CreateTable<OrderLine>();
+            Assert.That(response, Is.EqualTo(CreateTableResult.Created));
+            response = db.CreateTable<OrderHistory>();
+            Assert.That(response, Is.EqualTo(CreateTableResult.Created));
+            return db;
+        }
+
 		[Test]
 		public void FunctionParameter ()
 		{
-			var db = CreateDb ();
-			
+			var db = GetConnection();
+
 			db.Insert (new Product {
 				Name = "A",
 				Price = 20,
 			});
-			
+
 			db.Insert (new Product {
 				Name = "B",
 				Price = 10,
 			});
-			
+
 			Func<decimal, List<Product>> GetProductsWithPriceAtLeast = delegate(decimal val) {
 				return (from p in db.Table<Product> () where p.Price > val select p).ToList ();
-			}; 
-			
+			};
+
 			var r = GetProductsWithPriceAtLeast (15);
 			Assert.AreEqual (1, r.Count);
 			Assert.AreEqual ("A", r [0].Name);
 		}
-		
+
 		[Test]
 		public void WhereGreaterThan ()
 		{
-			var db = CreateDb ();
-			
+			var db = GetConnection();
+
 			db.Insert (new Product {
 				Name = "A",
 				Price = 20,
 			});
-			
+
 			db.Insert (new Product {
 				Name = "B",
 				Price = 10,
 			});
-			
+
 			Assert.AreEqual (2, db.Table<Product> ().Count ());
-			
+
 			var r = (from p in db.Table<Product> () where p.Price > 15 select p).ToList ();
 			Assert.AreEqual (1, r.Count);
 			Assert.AreEqual ("A", r [0].Name);
 		}
-		
+
 		[Test]
         public void GetWithExpression ()
 		{
-			var db = CreateDb();
-			
+			var db = GetConnection();
+
 			db.Insert (new Product {
 				Name = "A",
 				Price = 20,
 			});
-			
+
 			db.Insert (new Product {
 				Name = "B",
 				Price = 10,
@@ -85,19 +88,19 @@ namespace SQLite.Tests
                 Name = "C",
                 Price = 5,
             });
-			
+
 			Assert.AreEqual (3, db.Table<Product> ().Count ());
-			
+
 			var r = db.Get<Product>(x => x.Price == 10);
             Assert.IsNotNull(r);
 			Assert.AreEqual ("B", r.Name);
 		}
-		
+
 		[Test]
         public void FindWithExpression ()
 		{
-			var db = CreateDb();
-			
+			var db = GetConnection();
+
 			var r = db.Find<Product> (x => x.Price == 10);
             Assert.IsNull (r);
 		}
@@ -105,7 +108,7 @@ namespace SQLite.Tests
 		[Test]
 		public void OrderByCast ()
 		{
-			var db = CreateDb();
+			var db = GetConnection();
 
 			db.Insert (new Product {
 				Name = "A",
@@ -122,7 +125,7 @@ namespace SQLite.Tests
 
 			var cast = (from p in db.Table<Product> () orderby (int)p.TotalSales descending select p).ToList ();
 			Assert.AreEqual (2, cast.Count);
-			Assert.AreEqual ("B", cast [0].Name);			
+			Assert.AreEqual ("B", cast [0].Name);
 		}
 
 		public class Issue96_A
@@ -130,20 +133,20 @@ namespace SQLite.Tests
 			[ AutoIncrement, PrimaryKey]
 			public int ID { get; set; }
 			public string AddressLine { get; set; }
-			
+
 			[Indexed]
 			public int? ClassB { get; set; }
 			[Indexed]
 			public int? ClassC { get; set; }
 		}
-		
+
 		public class Issue96_B
 		{
 			[ AutoIncrement, PrimaryKey]
 			public int ID { get; set; }
 			public string CustomerName { get; set; }
 		}
-		
+
 		public class Issue96_C
 		{
 			[ AutoIncrement, PrimaryKey]
@@ -154,7 +157,7 @@ namespace SQLite.Tests
 		[Test]
 		public void Issue96_NullabelIntsInQueries ()
 		{
-			var db = CreateDb();
+			var db = GetConnection();
 			db.CreateTable<Issue96_A> ();
 
 			var id = 42;
@@ -194,7 +197,7 @@ namespace SQLite.Tests
         [Test]
         public void Issue303_WhereNot_A()
         {
-            using (var db = new TestDb())
+            using (var db = GetConnection())
             {
                 db.CreateTable<Issue303_A>();
                 db.Insert(new Issue303_A { Id = 1, Name = "aa" });
@@ -212,7 +215,7 @@ namespace SQLite.Tests
         [Test]
         public void Issue303_WhereNot_B()
         {
-            using (var db = new TestDb())
+            using (var db = GetConnection())
             {
                 db.CreateTable<Issue303_B>();
                 db.Insert(new Issue303_B { Id = 1, Flag = true });
@@ -230,7 +233,7 @@ namespace SQLite.Tests
 		[Test]
 		public void QuerySelectAverage ()
 		{
-			var db = CreateDb ();
+			var db = GetConnection();
 
 			db.Insert (new Product {
 				Name = "A",
@@ -268,7 +271,7 @@ namespace SQLite.Tests
 			public string Value { get; set; }
 		}
 
-		static T GetEntity<T> (TestDb db, int id) where T : IEntity, new ()
+		static T GetEntity<T> (SQLiteConnection db, int id) where T : IEntity, new ()
 		{
 			return db.Table<T> ().FirstOrDefault (x => x.Id == id);
 		}
@@ -276,7 +279,7 @@ namespace SQLite.Tests
 		[Test]
 		public void CastedParameters ()
 		{
-			var db = CreateDb ();
+			var db = GetConnection();
 			db.CreateTable<Entity> ();
 
 			db.Insert (new Entity {
@@ -291,9 +294,7 @@ namespace SQLite.Tests
 		[Test]
 		public void Issue460_ReplaceWith2Args ()
 		{
-			var db = CreateDb ();
-			db.Trace = true;
-			//db.Tracer = Console.WriteLine;
+			var db = GetConnection();
 
 			db.Insert (new Product {
 				Name = "I am not B X B",

@@ -20,7 +20,7 @@ namespace SQLite.Tests
 
 		SQLiteConnection CreateDb ()
 		{
-			var db = new TestDb ();
+			var db = TestDb.GetMemoryDb();
 			db.CreateTable<TestTable> ();
 			var items = from i in Enumerable.Range (0, Count)
 			            select new TestTable { Datum = 1000+i, Test = "Hello World" };

@@ -24,7 +24,7 @@ namespace SQLite.Tests
 
 			var key = "SecretPassword";
 
-			using (var db = new TestDb ()) {
+			using (var db = TestDb.GetFileSystemDb()) {
 				path = db.DatabasePath;
 
 				db.SetKey (key);
@@ -33,7 +33,7 @@ namespace SQLite.Tests
 				db.Insert (new TestTable { Value = "Hello" });
 			}
 
-			using (var db = new TestDb (path)) {
+			using (var db = new SQLiteConnection (path)) {
 				path = db.DatabasePath;
 
 				db.SetKey (key);
@@ -53,7 +53,7 @@ namespace SQLite.Tests
 			var key = new byte[32];
 			rand.NextBytes (key);
 
-			using (var db = new TestDb ()) {
+			using (var db = TestDb.GetFileSystemDb()) {
 				path = db.DatabasePath;
 
 				db.SetKey (key);
@@ -62,7 +62,7 @@ namespace SQLite.Tests
 				db.Insert (new TestTable { Value = "Hello" });
 			}
 
-			using (var db = new TestDb (path)) {
+			using (var db = new SQLiteConnection (path)) {
 				path = db.DatabasePath;
 
 				db.SetKey (key);
@@ -77,7 +77,7 @@ namespace SQLite.Tests
 		public void SetBadBytesKey ()
 		{
 			try {
-				using (var db = new TestDb ()) {
+				using (var db = TestDb.GetMemoryDb()) {
 					db.SetKey (new byte[] { 1, 2, 3, 4 });
 				}
 				Assert.Fail ("Should have thrown");

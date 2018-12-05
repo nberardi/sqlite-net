@@ -19,13 +19,11 @@ namespace SQLite.Tests
 
         public class TestObjString : TestObjBase<string> { }
 
-        public class TestDb : SQLiteConnection
-        {
-            public TestDb(String path)
-                : base(path)
-            {
-                CreateTable<TestObjString>();
-            }
+        private SQLiteConnection GetConnection() {
+            var db = TestDb.GetMemoryDb();
+            var response = db.CreateTable<TestObjString>();
+            Assert.That(response, Is.EqualTo(CreateTableResult.Created));
+            return db;
         }
 
         [Test]
@@ -38,7 +36,7 @@ namespace SQLite.Tests
                 Date = new DateTime(2013, 1, i)
 			};
 
-            var db = new TestDb(TestPath.GetTempFileName());
+            var db = GetConnection();
             db.InsertAll(cq);
 
             var results = db.Table<TestObjString>().Where(o => o.Data.Equals("10"));

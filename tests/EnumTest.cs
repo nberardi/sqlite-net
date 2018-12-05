@@ -56,21 +56,21 @@ namespace SQLite.Tests
 
 		}
 
-        public class TestDb : SQLiteConnection
-        {
-            public TestDb(String path)
-                : base(path)
-            {
-                CreateTable<TestObj>();
-				CreateTable<StringTestObj>();
-				CreateTable<ByteTestObj> ();
-            }
+        private SQLiteConnection GetConnection() {
+            var db = TestDb.GetMemoryDb();
+            var response = db.CreateTable<TestObj>();
+            Assert.That(response, Is.EqualTo(CreateTableResult.Created));
+            response = db.CreateTable<StringTestObj>();
+            Assert.That(response, Is.EqualTo(CreateTableResult.Created));
+            response = db.CreateTable<ByteTestObj>();
+            Assert.That(response, Is.EqualTo(CreateTableResult.Created));
+            return db;
         }
 
         [Test]
         public void ShouldPersistAndReadEnum()
         {
-            var db = new TestDb(TestPath.GetTempFileName());
+            var db = GetConnection();
 
             var obj1 = new TestObj() { Id = 1, Value = TestEnum.Value2 };
             var obj2 = new TestObj() { Id = 2, Value = TestEnum.Value3 };
@@ -94,7 +94,7 @@ namespace SQLite.Tests
 		[Test]
 		public void ShouldPersistAndReadStringEnum ()
 		{
-			var db = new TestDb(TestPath.GetTempFileName());
+            var db = GetConnection();
 
 			var obj1 = new StringTestObj() { Id = 1, Value = StringTestEnum.Value2 };
 			var obj2 = new StringTestObj() { Id = 2, Value = StringTestEnum.Value3 };
@@ -139,7 +139,7 @@ namespace SQLite.Tests
 		[Test]
 		public void Issue33_ShouldPersistAndReadByteEnum ()
 		{
-			var db = new TestDb (TestPath.GetTempFileName ());
+            var db = GetConnection();
 
 			var obj1 = new ByteTestObj () { Id = 1, Value = ByteTestEnum.Value2 };
 			var obj2 = new ByteTestObj () { Id = 2, Value = ByteTestEnum.Value3 };

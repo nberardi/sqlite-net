@@ -33,19 +33,17 @@ namespace SQLite.Tests
 
         }
 
-        public class TestDb : SQLiteConnection
-        {
-            public TestDb(String path)
-                : base(path)
-            {
-                CreateTable<TestObj>();
-            }
+        private SQLiteConnection GetConnection() {
+            var db = TestDb.GetMemoryDb();
+            var response = db.CreateTable<TestObj>();
+            Assert.That(response, Is.EqualTo(CreateTableResult.Created));
+            return db;
         }
 
         [Test]
         public void ShouldPersistAndReadEnum()
         {
-            var db = new TestDb(TestPath.GetTempFileName());
+            var db = GetConnection();
 
             var obj1 = new TestObj() { Id = 1, Value = TestEnum.Value2 };
             var obj2 = new TestObj() { Id = 2, Value = TestEnum.Value3 };

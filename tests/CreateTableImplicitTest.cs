@@ -10,12 +10,12 @@ namespace SQLite.Tests
     [TestFixture]
     public class CreateTableImplicitTest
     {
-        private TestDb _db;
+        private SQLiteConnection _db;
 
         [OneTimeSetUp]
         public void Init()
         {
-            _db = new TestDb(":memory:");
+            _db = TestDb.GetMemoryDb();
         }
 
         [OneTimeTearDown]
@@ -47,7 +47,7 @@ namespace SQLite.Tests
             public int IndexedId { get; set; }
         }
 
-        private void CheckPK(TestDb db)
+        private void CheckPK(SQLiteConnection db)
         {
             for (int i = 1; i <= 10; i++)
             {

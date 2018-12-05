@@ -16,7 +16,7 @@ namespace SQLite.Tests
 		[Test]
 		public void CreateTypeWithNoProps ()
 		{
-			var db = new TestDb ();
+			var db = TestDb.GetMemoryDb();
 
             Assert.That(() => db.CreateTable<NoPropObject>(), Throws.TypeOf<Exception>());
 		}
@@ -24,20 +24,20 @@ namespace SQLite.Tests
 		[Test]
 		public void CreateThem ()
 		{
-			var db = new TestDb ();
-			
+			var db = TestDb.GetMemoryDb();
+
 			db.CreateTable<Product> ();
 			db.CreateTable<Order> ();
 			db.CreateTable<OrderLine> ();
 			db.CreateTable<OrderHistory> ();
-			
+
 			VerifyCreations(db);
 		}
 
 	    [Test]
         public void CreateAsPassedInTypes ()
         {
-            var db = new TestDb();
+			var db = TestDb.GetMemoryDb();
 
             db.CreateTable(typeof(Product));
             db.CreateTable(typeof(Order));
@@ -50,18 +50,18 @@ namespace SQLite.Tests
 		[Test]
 		public void CreateTwice ()
 		{
-			var db = new TestDb ();
-			
+			var db = TestDb.GetMemoryDb();
+
 			db.CreateTable<Product> ();
 			db.CreateTable<OrderLine> ();
 			db.CreateTable<Order> ();
 			db.CreateTable<OrderLine> ();
 			db.CreateTable<OrderHistory> ();
-			
+
 			VerifyCreations(db);
 		}
-        
-        private static void VerifyCreations(TestDb db)
+
+        private static void VerifyCreations(SQLiteConnection db)
         {
             var orderLine = db.GetMapping(typeof(OrderLine));
             Assert.AreEqual(6, orderLine.Columns.Length);
@@ -85,7 +85,7 @@ namespace SQLite.Tests
 		[Test]
 		public void Issue115_MissingPrimaryKey ()
 		{
-			using (var conn = new TestDb ()) {
+			using (var conn = TestDb.GetMemoryDb()) {
 
 				conn.CreateTable<Issue115_MyObject> ();
 				conn.InsertAll (from i in Enumerable.Range (0, 10) select new Issue115_MyObject {
@@ -131,12 +131,12 @@ namespace SQLite.Tests
 		[Test]
 		public void WithoutRowId ()
 		{
-			using(var conn = new TestDb ())
+			using (var conn = TestDb.GetMemoryDb())
 			{
 				conn.CreateTable<OrderLine> ();
 				var info = conn.Table<SqliteMaster>().Where(m => m.TableName=="OrderLine").First ();
 				Assert.That (!info.Sql.Contains ("without rowid"));
-				
+
 				conn.CreateTable<WantsNoRowId> ();
 				info = conn.Table<SqliteMaster>().Where(m => m.TableName=="WantsNoRowId").First ();
 				Assert.That (info.Sql.Contains ("without rowid"));

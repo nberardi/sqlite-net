@@ -20,16 +20,16 @@ namespace SQLite.Tests {
 
         }
 
-        public class TestDb : SQLiteConnection {
-            public TestDb(String path)
-                : base(path) {
-                CreateTable<TestObj>();
-            }
+        private SQLiteConnection GetConnection(CreateFlags createFlags) {
+            var db = TestDb.GetMemoryDb();
+            var response = db.CreateTable<TestObj>(createFlags);
+            Assert.That(response, Is.EqualTo(CreateTableResult.Created));
+            return db;
         }
 
         [Test]
         public void ShouldPersistAndReadGuid() {
-            var db = new TestDb(TestPath.GetTempFileName());
+            var db = GetConnection(CreateFlags.None);
 
             var obj1 = new TestObj() { Id=new Guid("36473164-C9E4-4CDF-B266-A0B287C85623"), Text = "First Guid Object" };
             var obj2 = new TestObj() {  Id=new Guid("BC5C4C4A-CA57-4B61-8B53-9FD4673528B6"), Text = "Second Guid Object" };
@@ -53,8 +53,7 @@ namespace SQLite.Tests {
         [Test]
         public void AutoGuid_HasGuid()
         {
-            var db = new SQLiteConnection(TestPath.GetTempFileName());
-            db.CreateTable<TestObj>(CreateFlags.AutoIncPK);
+            var db = GetConnection(CreateFlags.AutoIncPK);
 
             var guid1 = new Guid("36473164-C9E4-4CDF-B266-A0B287C85623");
             var guid2 = new Guid("BC5C4C4A-CA57-4B61-8B53-9FD4673528B6");
@@ -73,11 +72,7 @@ namespace SQLite.Tests {
         [Test]
         public void AutoGuid_EmptyGuid()
         {
-            var db = new SQLiteConnection(TestPath.GetTempFileName());
-            db.CreateTable<TestObj>(CreateFlags.AutoIncPK);
-
-            var guid1 = new Guid("36473164-C9E4-4CDF-B266-A0B287C85623");
-            var guid2 = new Guid("BC5C4C4A-CA57-4B61-8B53-9FD4673528B6");
+            var db = GetConnection(CreateFlags.AutoIncPK);
 
             var obj1 = new TestObj() { Text = "First Guid Object" };
             var obj2 = new TestObj() { Text = "Second Guid Object" };

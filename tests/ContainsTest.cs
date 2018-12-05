@@ -10,7 +10,7 @@ using NUnit.Framework;
 using System.Diagnostics;
 
 namespace SQLite.Tests
-{    
+{
     [TestFixture]
     public class ContainsTest
     {
@@ -18,24 +18,22 @@ namespace SQLite.Tests
         {
             [AutoIncrement, PrimaryKey]
             public int Id { get; set; }
-			
+
 			public string Name { get; set; }
-			
+
             public override string ToString ()
             {
             	return string.Format("[TestObj: Id={0}, Name={1}]", Id, Name);
             }
         }
-		
-        public class TestDb : SQLiteConnection
-        {
-            public TestDb(String path)
-                : base(path)
-            {
-				CreateTable<TestObj>();
-            }
+
+        private SQLiteConnection GetConnection() {
+            var db = TestDb.GetMemoryDb();
+            var response = db.CreateTable<TestObj>();
+            Assert.That(response, Is.EqualTo(CreateTableResult.Created));
+            return db;
         }
-		
+
         [Test]
         public void ContainsConstantData()
         {
@@ -44,22 +42,21 @@ namespace SQLite.Tests
 					select new TestObj() {
 				Name = i.ToString()
 			};
-			
-			var db = new TestDb(TestPath.GetTempFileName());
-			
+
+			var db = GetConnection();
 			db.InsertAll(cq);
-			
+
 			db.Trace = true;
-			
-			var tensq = new string[] { "0", "10", "20" };			
+
+			var tensq = new string[] { "0", "10", "20" };
 			var tens = (from o in db.Table<TestObj>() where tensq.Contains(o.Name) select o).ToList();
 			Assert.AreEqual(2, tens.Count);
-			
-			var moreq = new string[] { "0", "x", "99", "10", "20", "234324" };			
+
+			var moreq = new string[] { "0", "x", "99", "10", "20", "234324" };
 			var more = (from o in db.Table<TestObj>() where moreq.Contains(o.Name) select o).ToList();
 			Assert.AreEqual(2, more.Count);
         }
-		
+
 		[Test]
         public void ContainsQueriedData()
         {
@@ -68,25 +65,24 @@ namespace SQLite.Tests
 					select new TestObj() {
 				Name = i.ToString()
 			};
-			
-			var db = new TestDb(TestPath.GetTempFileName());
-			
+
+			var db = GetConnection();
 			db.InsertAll(cq);
-			
+
 			db.Trace = true;
-			
-			var tensq = new string[] { "0", "10", "20" };			
+
+			var tensq = new string[] { "0", "10", "20" };
 			var tens = (from o in db.Table<TestObj>() where tensq.Contains(o.Name) select o).ToList();
 			Assert.AreEqual(2, tens.Count);
-			
-			var moreq = new string[] { "0", "x", "99", "10", "20", "234324" };			
+
+			var moreq = new string[] { "0", "x", "99", "10", "20", "234324" };
 			var more = (from o in db.Table<TestObj>() where moreq.Contains(o.Name) select o).ToList();
 			Assert.AreEqual(2, more.Count);
-			
+
 			// https://github.com/praeclarum/sqlite-net/issues/28
 			var moreq2 = moreq.ToList ();
 			var more2 = (from o in db.Table<TestObj>() where moreq2.Contains(o.Name) select o).ToList();
-			Assert.AreEqual(2, more2.Count);			
+			Assert.AreEqual(2, more2.Count);
         }
     }
 }

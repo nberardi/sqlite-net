@@ -51,15 +51,15 @@ namespace SQLite.Tests
 				new ByteArrayClass() { bytes = null } //Null should be supported
 			};
 
-			SQLiteConnection database = new SQLiteConnection(TestPath.GetTempFileName());
-			database.CreateTable<ByteArrayClass>();
+			var db = TestDb.GetMemoryDb();
+			db.CreateTable<ByteArrayClass>();
 
 			//Insert all of the ByteArrayClass
 			foreach (ByteArrayClass b in byteArrays)
-				database.Insert(b);
+				db.Insert(b);
 
 			//Get them back out
-			ByteArrayClass[] fetchedByteArrays = database.Table<ByteArrayClass>().OrderBy(x => x.ID).ToArray();
+			ByteArrayClass[] fetchedByteArrays = db.Table<ByteArrayClass>().OrderBy(x => x.ID).ToArray();
 
 			Assert.AreEqual(fetchedByteArrays.Length, byteArrays.Length);
 			//Check they are the same
@@ -84,8 +84,8 @@ namespace SQLite.Tests
 				new ByteArrayClass() { bytes = null } //Null should be supported
 			};
 
-            SQLiteConnection database = new SQLiteConnection(TestPath.GetTempFileName());
-            database.CreateTable<ByteArrayClass>();
+			var db = TestDb.GetMemoryDb();
+            db.CreateTable<ByteArrayClass>();
 
             byte[] criterion = new byte[] { 1, 0, 1 };
 
@@ -93,14 +93,14 @@ namespace SQLite.Tests
             int id = 0;
             foreach (ByteArrayClass b in byteArrays)
             {
-                database.Insert(b);
+                db.Insert(b);
                 if (b.bytes != null && criterion.SequenceEqual<byte>(b.bytes))
                     id = b.ID;
             }
             Assert.AreNotEqual(0, id, "An ID wasn't set");
 
             //Get it back out
-            ByteArrayClass fetchedByteArray = database.Table<ByteArrayClass>().Where(x => x.bytes == criterion).First();
+            ByteArrayClass fetchedByteArray = db.Table<ByteArrayClass>().Where(x => x.bytes == criterion).First();
             Assert.IsNotNull(fetchedByteArray);
             //Check they are the same
             Assert.AreEqual(id, fetchedByteArray.ID);
@@ -121,8 +121,8 @@ namespace SQLite.Tests
 				new ByteArrayClass() { bytes = null } //Null should be supported
 			};
 
-            SQLiteConnection database = new SQLiteConnection(TestPath.GetTempFileName());
-            database.CreateTable<ByteArrayClass>();
+			var db = TestDb.GetMemoryDb();
+            db.CreateTable<ByteArrayClass>();
 
             byte[] criterion = null;
 
@@ -130,14 +130,14 @@ namespace SQLite.Tests
             int id = 0;
             foreach (ByteArrayClass b in byteArrays)
             {
-                database.Insert(b);
+                db.Insert(b);
                 if (b.bytes == null)
                     id = b.ID;
             }
             Assert.AreNotEqual(0, id, "An ID wasn't set");
 
             //Get it back out
-            ByteArrayClass fetchedByteArray = database.Table<ByteArrayClass>().Where(x => x.bytes == criterion).First();
+            ByteArrayClass fetchedByteArray = db.Table<ByteArrayClass>().Where(x => x.bytes == criterion).First();
 
             Assert.IsNotNull(fetchedByteArray);
             //Check they are the same
@@ -155,14 +155,14 @@ namespace SQLite.Tests
 
 			ByteArrayClass byteArray = new ByteArrayClass() { bytes = bytes };
 
-			SQLiteConnection database = new SQLiteConnection(TestPath.GetTempFileName());
-			database.CreateTable<ByteArrayClass>();
+			var db = TestDb.GetMemoryDb();
+			db.CreateTable<ByteArrayClass>();
 
 			//Insert the ByteArrayClass
-			database.Insert(byteArray);
+			db.Insert(byteArray);
 
 			//Get it back out
-			ByteArrayClass[] fetchedByteArrays = database.Table<ByteArrayClass>().ToArray();
+			ByteArrayClass[] fetchedByteArrays = db.Table<ByteArrayClass>().ToArray();
 
 			Assert.AreEqual(fetchedByteArrays.Length, 1);
 

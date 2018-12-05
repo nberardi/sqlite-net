@@ -25,7 +25,7 @@ namespace SQLite.Tests
 				NullableIntClass other = (NullableIntClass)obj;
 				return this.ID == other.ID && this.NullableInt == other.NullableInt;
 			}
-			
+
 			public override int GetHashCode ()
 			{
 				return ID.GetHashCode () + NullableInt.GetHashCode ();
@@ -36,7 +36,7 @@ namespace SQLite.Tests
 		[Description("Create a table with a nullable int column then insert and select against it")]
 		public void NullableInt()
 		{
-			SQLiteConnection db = new SQLiteConnection(TestPath.GetTempFileName());
+            var db = TestDb.GetMemoryDb();
 			db.CreateTable<NullableIntClass>();
 
 			NullableIntClass withNull = new NullableIntClass() { NullableInt = null };
@@ -50,7 +50,7 @@ namespace SQLite.Tests
 			db.Insert(withMinus1);
 
 			NullableIntClass[] results = db.Table<NullableIntClass>().OrderBy(x => x.ID).ToArray();
-			
+
 			Assert.AreEqual(4, results.Length);
 
 			Assert.AreEqual(withNull, results[0]);
@@ -72,7 +72,7 @@ namespace SQLite.Tests
 				NullableFloatClass other = (NullableFloatClass)obj;
 				return this.ID == other.ID && this.NullableFloat == other.NullableFloat;
 			}
-			
+
 			public override int GetHashCode ()
 			{
 				return ID.GetHashCode () + NullableFloat.GetHashCode ();
@@ -83,7 +83,7 @@ namespace SQLite.Tests
 		[Description("Create a table with a nullable int column then insert and select against it")]
 		public void NullableFloat()
 		{
-			SQLiteConnection db = new SQLiteConnection(TestPath.GetTempFileName());
+            var db = TestDb.GetMemoryDb();
 			db.CreateTable<NullableFloatClass>();
 
 			NullableFloatClass withNull = new NullableFloatClass() { NullableFloat = null };
@@ -121,7 +121,7 @@ namespace SQLite.Tests
 				StringClass other = (StringClass)obj;
 				return this.ID == other.ID && this.StringData == other.StringData;
 			}
-			
+
 			public override int GetHashCode ()
 			{
 				return ID.GetHashCode () + StringData.GetHashCode ();
@@ -131,7 +131,7 @@ namespace SQLite.Tests
 		[Test]
 		public void NullableString()
 		{
-			SQLiteConnection db = new SQLiteConnection(TestPath.GetTempFileName());
+            var db = TestDb.GetMemoryDb();
 			db.CreateTable<StringClass>();
 
 			StringClass withNull = new StringClass() { StringData = null };
@@ -154,7 +154,7 @@ namespace SQLite.Tests
 		[Test]
 		public void WhereNotNull()
 		{
-			SQLiteConnection db = new SQLiteConnection(TestPath.GetTempFileName());
+            var db = TestDb.GetMemoryDb();
 			db.CreateTable<NullableIntClass>();
 
 			NullableIntClass withNull = new NullableIntClass() { NullableInt = null };
@@ -179,7 +179,7 @@ namespace SQLite.Tests
 		[Test]
 		public void WhereNull()
 		{
-			SQLiteConnection db = new SQLiteConnection(TestPath.GetTempFileName());
+            var db = TestDb.GetMemoryDb();
 			db.CreateTable<NullableIntClass>();
 
 			NullableIntClass withNull = new NullableIntClass() { NullableInt = null };
@@ -201,7 +201,7 @@ namespace SQLite.Tests
 		[Test]
 		public void StringWhereNull()
 		{
-			SQLiteConnection db = new SQLiteConnection(TestPath.GetTempFileName());
+            var db = TestDb.GetMemoryDb();
 			db.CreateTable<StringClass>();
 
 			StringClass withNull = new StringClass() { StringData = null };
@@ -220,7 +220,7 @@ namespace SQLite.Tests
 		[Test]
 		public void StringWhereNotNull()
 		{
-			SQLiteConnection db = new SQLiteConnection(TestPath.GetTempFileName());
+            var db = TestDb.GetMemoryDb();
 			db.CreateTable<StringClass>();
 
 			StringClass withNull = new StringClass() { StringData = null };
@@ -279,7 +279,7 @@ namespace SQLite.Tests
 		[Description ("Create a table with a nullable enum column then insert and select against it")]
 		public void NullableEnum ()
 		{
-			SQLiteConnection db = new SQLiteConnection (TestPath.GetTempFileName ());
+            var db = TestDb.GetMemoryDb();
 			db.CreateTable<NullableEnumClass> ();
 
 			var withNull = new NullableEnumClass { NullableIntEnum = null, NullableTextEnum = null };

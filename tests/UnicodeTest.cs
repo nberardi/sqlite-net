@@ -11,7 +11,7 @@ namespace SQLite.Tests
 		[Test]
 		public void Insert ()
 		{
-			var db = new TestDb ();
+			var db = TestDb.GetMemoryDb();
 			
 			db.CreateTable<Product> ();
 			
@@ -29,7 +29,7 @@ namespace SQLite.Tests
 		[Test]
 		public void Query ()
 		{
-			var db = new TestDb ();
+			var db = TestDb.GetMemoryDb();
 			
 			db.CreateTable<Product> ();
 			

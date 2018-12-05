@@ -21,33 +21,27 @@ namespace SQLite.Tests
 			public string Name { get; set; }
 			public decimal Price { get; set; }
 		}
-		
-		public class TestDb : SQLiteConnection
-		{
-			public TestDb () : base(TestPath.GetTempFileName ())
-			{
-				Trace = true;
-			}
-		}
-		
+
+
+
 		[Test]
 		public void CreateInsertDrop ()
 		{
-			var db = new TestDb ();
-			
+			var db = TestDb.GetMemoryDb();
+
 			db.CreateTable<Product> ();
-			
+
 			db.Insert (new Product {
 				Name = "Hello",
 				Price = 16,
 			});
-			
+
 			var n = db.Table<Product> ().Count ();
-			
+
 			Assert.AreEqual (1, n);
-			
+
 			db.DropTable<Product> ();
-			
+
 			ExceptionAssert.Throws<SQLiteException>(() => db.Table<Product> ().Count ());
 		}
 	}

@@ -9,11 +9,11 @@ using System.Diagnostics;
 using NUnit.Framework;
 
 namespace SQLite.Tests
-{    
+{
     [TestFixture]
     public class BooleanTest
     {
-        public class VO
+        public class TestObj
         {
             [AutoIncrement, PrimaryKey]
             public int ID { get; set; }
@@ -22,47 +22,38 @@ namespace SQLite.Tests
 
             public override string ToString()
             {
-                return string.Format("VO:: ID:{0} Flag:{1} Text:{2}", ID, Flag, Text);
+                return string.Format("TestObj:: ID:{0} Flag:{1} Text:{2}", ID, Flag, Text);
             }
         }
-        public class DbAcs : SQLiteConnection
-        {
-            public DbAcs(String path)
-                : base(path)
-            {
-            }
 
-            public void buildTable()
-            {
-                CreateTable<VO>();
-            }
-
-            public int CountWithFlag(Boolean flag)
-            {
-                var cmd = CreateCommand("SELECT COUNT(*) FROM VO Where Flag = ?");
-                return cmd.ExecuteScalar<int>(new object[] { flag });            
-            }
+        private SQLiteConnection GetConnection() {
+            var db = TestDb.GetMemoryDb();
+            var response = db.CreateTable<TestObj>();
+            Assert.That(response, Is.EqualTo(CreateTableResult.Created));
+            return db;
         }
-        
+
+        private int CountWithFlag(SQLiteConnection db, bool flag) => db.ExecuteScalar<int>("select count(*) from TestObj where Flag = ?", flag);
+        private List<TestObj> GetList (SQLiteConnection db, bool flag) => db.Query<TestObj>("select * from TestObj where Flag = ?", flag);
+
         [Test]
         public void TestBoolean()
         {
-            var tmpFile = TestPath.GetTempFileName();
-            var db = new DbAcs(tmpFile);         
-            db.buildTable();
+			var db = GetConnection();
+
             for (int i = 0; i < 10; i++)
-                db.Insert(new VO() { Flag = (i % 3 == 0), Text = String.Format("VO{0}", i) });                
+                db.Insert(new TestObj() { Flag = (i % 3 == 0), Text = String.Format("TestObj{0}", i) });
 
-            // count vo which flag is true      
-            Assert.AreEqual(4, db.CountWithFlag(true));
-            Assert.AreEqual(6, db.CountWithFlag(false));
+            // count vo which flag is true
+            Assert.AreEqual(4, CountWithFlag(db, true));
+            Assert.AreEqual(6, CountWithFlag(db, false));
 
-            Debug.WriteLine("VO with true flag:");
-            foreach (var vo in db.Query<VO>("SELECT * FROM VO Where Flag = ?", true))
+            Debug.WriteLine("TestObj with true flag:");
+            foreach (var vo in GetList(db, true))
 				Debug.WriteLine (vo.ToString ());
 
-			Debug.WriteLine ("VO with false flag:");
-            foreach (var vo in db.Query<VO>("SELECT * FROM VO Where Flag = ?", false))
+			Debug.WriteLine ("TestObj with false flag:");
+            foreach (var vo in GetList(db, false))
 				Debug.WriteLine (vo.ToString ());
         }
     }

@@ -19,11 +19,11 @@ namespace SQLite.Tests
 		[Test]
 		public void AsTicks ()
 		{
-			var db = new TestDb ();
+			var db = TestDb.GetMemoryDb();
 			TestDateTimeOffset (db);
 		}
 
-		void TestDateTimeOffset (TestDb db)
+		void TestDateTimeOffset (SQLiteConnection db)
 		{
 			db.CreateTable<TestObj> ();
 

@@ -8,13 +8,13 @@ namespace SQLite.Tests
 	[TestFixture]
 	public class TableChangedTest
 	{
-		TestDb db;
+		SQLiteConnection db;
 		int changeCount = 0;
 
 		[SetUp]
 		public void SetUp ()
 		{
-			db = new TestDb ();
+			db = TestDb.GetMemoryDb();
 			db.Trace = true;
 			db.CreateTable<Product> ();
 			db.CreateTable<Order> ();

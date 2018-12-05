@@ -36,7 +36,7 @@ namespace SQLite.Tests
 		[Test]
 		public void MappingIgnoreColumn ()
 		{
-			var db = new TestDb ();
+			var db = TestDb.GetMemoryDb();
 			var m = db.GetMapping<TestObj> ();
 
 			Assert.AreEqual (2, m.Columns.Length);
@@ -45,14 +45,14 @@ namespace SQLite.Tests
 		[Test]
 		public void CreateTableSucceeds ()
 		{
-			var db = new TestDb ();
+			var db = TestDb.GetMemoryDb();
 			db.CreateTable<TestObj> ();
 		}
 
 		[Test]
 		public void InsertSucceeds ()
 		{
-			var db = new TestDb ();
+			var db = TestDb.GetMemoryDb();
 			db.CreateTable<TestObj> ();
 
 			var o = new TestObj {
@@ -68,7 +68,7 @@ namespace SQLite.Tests
 		[Test]
 		public void GetDoesntHaveIgnores ()
 		{
-			var db = new TestDb ();
+			var db = TestDb.GetMemoryDb();
 			db.CreateTable<TestObj> ();
 
 			var o = new TestObj {
@@ -101,7 +101,7 @@ namespace SQLite.Tests
 		[Test]
 		public void BaseIgnores ()
 		{
-			var db = new TestDb ();
+			var db = TestDb.GetMemoryDb();
 			db.CreateTable<TableClass> ();
 
 			var o = new TableClass {
@@ -133,7 +133,7 @@ namespace SQLite.Tests
 		[Test]
 		public void RedefinedIgnores ()
 		{
-			var db = new TestDb ();
+			var db = TestDb.GetMemoryDb();
 			db.CreateTable<RedefinedClass> ();
 
 			var o = new RedefinedClass {
@@ -170,7 +170,7 @@ namespace SQLite.Tests
 		[Test]
 		public void DerivedIgnore ()
 		{
-			var db = new TestDb ();
+			var db = TestDb.GetMemoryDb();
 			db.CreateTable<DerivedIgnoreClass> ();
 
 			var o = new DerivedIgnoreClass {

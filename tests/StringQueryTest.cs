@@ -8,12 +8,12 @@ namespace SQLite.Tests
 	[TestFixture]
 	public class StringQueryTest
 	{
-		TestDb db;
+		SQLiteConnection db;
 		
 		[SetUp]
 		public void SetUp ()
 		{
-			db = new TestDb ();
+			db = TestDb.GetMemoryDb();
 			db.CreateTable<Product> ();
 			
 			var prods = new[] {

@@ -45,7 +45,7 @@ namespace SQLite.Tests
 		[Test]
 		public void CreateUniqueIndexes ()
 		{
-			using (var db = new TestDb ()) {
+			using (var db = TestDb.GetMemoryDb()) {
 				db.CreateTable<TheOne> ();
 				var indexes = db.Query<IndexInfo> ("PRAGMA INDEX_LIST (\"TheOne\")");
 				Assert.AreEqual (4, indexes.Count, "# of indexes");
@@ -56,7 +56,7 @@ namespace SQLite.Tests
 			}
 		}
 
-		static void CheckIndex (TestDb db, List<IndexInfo> indexes, string iname, bool unique, params string [] columns)
+		static void CheckIndex (SQLiteConnection db, List<IndexInfo> indexes, string iname, bool unique, params string [] columns)
 		{
 			if (columns == null)
 				throw new Exception ("Don't!");

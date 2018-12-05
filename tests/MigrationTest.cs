@@ -24,7 +24,7 @@ namespace SQLite.Tests
 		[Test]
 		public void UpperAndLowerColumnNames ()
 		{
-			using (var db = new TestDb (true) { Trace = true } ) {
+			using (var db = TestDb.GetMemoryDb()) {
 				db.CreateTable<LowerId> ();
 				db.CreateTable<UpperId> ();
 
@@ -62,7 +62,7 @@ namespace SQLite.Tests
 			// Init the DB
 			//
 			var path = "";
-			using (var db = new TestDb (true) { Trace = true }) {
+			using (var db = TestDb.GetFileSystemDb()) {
 				path = db.DatabasePath;
 
 				db.CreateTable<TestAddBefore> ();
@@ -84,7 +84,7 @@ namespace SQLite.Tests
 			//
 			// Migrate and use it
 			//
-			using (var db = new SQLiteConnection (path, true) { Trace = true }) {
+			using (var db = new SQLiteConnection (path) { Trace = true }) {
 
 				db.CreateTable<TestAddAfter> ();
 

@@ -19,18 +19,18 @@ namespace SQLite.Tests
 		[Test]
 		public void AsTicks ()
 		{
-			var db = new TestDb (storeDateTimeAsTicks: true);
+			var db = TestDb.GetMemoryDb(storeDateTimeAsTicks: true);
 			TestDateTime (db);
 		}
 
 		[Test]
 		public void AsStrings ()
 		{
-			var db = new TestDb (storeDateTimeAsTicks: false);			
+			var db = TestDb.GetMemoryDb(storeDateTimeAsTicks: false);
 			TestDateTime (db);
 		}
 
-		void TestDateTime (TestDb db)
+		private void TestDateTime (SQLiteConnection db)
 		{
 			db.CreateTable<TestObj> ();
 
