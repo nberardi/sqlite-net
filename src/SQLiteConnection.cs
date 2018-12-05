@@ -213,7 +213,7 @@ namespace SQLite
 		{
 			Result r = SQLite3.EnableLoadExtension (Handle, enabled ? 1 : 0);
 			if (r != Result.OK) {
-                string msg = SQLite3.GetErrorMessage(Handle);
+                string msg = SQLite3.GetErrorMessageUTF8(Handle);
 				throw new SQLiteException(r, msg);
 			}
 		}
@@ -2040,7 +2040,7 @@ namespace SQLite
 
 					// only throw an exception if we are disposing, because it is bad practice to throw an exception in the finalizer
 					if (disposing && r != Result.OK) {
-						var msg = SQLite3.GetErrorMessage(Handle);
+						var msg = SQLite3.GetErrorMessageUTF8(Handle);
 						throw new SQLiteException(r, msg);
 					}
 				}

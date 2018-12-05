@@ -68,11 +68,10 @@ namespace SQLite
 
 		public static Sqlite3Statement Prepare2 (Sqlite3DatabaseHandle db, string query)
 		{
-			Sqlite3Statement stmt = default (Sqlite3Statement);
-			var r = Sqlite3.sqlite3_prepare_v2 (db, query, out stmt);
-			if (r != 0) {
-                throw new SQLiteException((Result) r, GetErrorMessage(db), sql: query);
-			}
+			var r = Sqlite3.sqlite3_prepare_v2 (db, query, out var stmt);
+			if (r != 0)
+                throw new SQLiteException((Result) r, GetErrorMessageUTF8(db), sql: query);
+
 			return stmt;
 		}
 
@@ -96,7 +95,7 @@ namespace SQLite
 			return Sqlite3.sqlite3_last_insert_rowid (db);
 		}
 
-        public static string GetErrorMessage(Sqlite3DatabaseHandle db)
+        public static string GetErrorMessageUTF8(Sqlite3DatabaseHandle db)
 		{
 			return Sqlite3.sqlite3_errmsg (db);
         }
@@ -106,7 +105,7 @@ namespace SQLite
 			return Sqlite3.sqlite3_bind_null (stmt, index);
 		}
 
-		public static int BindInt (Sqlite3Statement stmt, int index, int val)
+		public static int BindInt32 (Sqlite3Statement stmt, int index, int val)
 		{
 			return Sqlite3.sqlite3_bind_int (stmt, index, val);
 		}
@@ -121,7 +120,7 @@ namespace SQLite
 			return Sqlite3.sqlite3_bind_double (stmt, index, val);
 		}
 
-		public static int BindText (Sqlite3Statement stmt, int index, string val, int n, IntPtr free)
+		public static int BindStringUTF8 (Sqlite3Statement stmt, int index, string val, int n, IntPtr free)
 		{
 			return Sqlite3.sqlite3_bind_text (stmt, index, val);
 		}
@@ -136,7 +135,7 @@ namespace SQLite
 			return Sqlite3.sqlite3_column_count (stmt);
 		}
 
-		public static string ColumnName16 (Sqlite3Statement stmt, int index)
+		public static string ColumnNameUTF8 (Sqlite3Statement stmt, int index)
 		{
 			return Sqlite3.sqlite3_column_name (stmt, index);
 		}
@@ -146,7 +145,7 @@ namespace SQLite
 			return (ColType)Sqlite3.sqlite3_column_type (stmt, index);
 		}
 
-		public static int ColumnInt (Sqlite3Statement stmt, int index)
+		public static int ColumnInt32 (Sqlite3Statement stmt, int index)
 		{
 			return Sqlite3.sqlite3_column_int (stmt, index);
 		}
@@ -161,27 +160,17 @@ namespace SQLite
 			return Sqlite3.sqlite3_column_double (stmt, index);
 		}
 
-		public static byte[] ColumnBlob (Sqlite3Statement stmt, int index)
-		{
-			return Sqlite3.sqlite3_column_blob (stmt, index);
-		}
-
-		public static int ColumnBytes (Sqlite3Statement stmt, int index)
-		{
-			return Sqlite3.sqlite3_column_bytes (stmt, index);
-		}
-
-		public static string ColumnString (Sqlite3Statement stmt, int index)
+		public static string ColumnStringUTF8 (Sqlite3Statement stmt, int index)
 		{
 			return Sqlite3.sqlite3_column_text (stmt, index);
 		}
 
 		public static byte[] ColumnByteArray (Sqlite3Statement stmt, int index)
 		{
-			int length = ColumnBytes (stmt, index);
-			if (length > 0) {
-				return ColumnBlob (stmt, index);
-			}
+			int length = Sqlite3.sqlite3_column_bytes (stmt, index);
+			if (length > 0)
+				return Sqlite3.sqlite3_column_blob (stmt, index);
+
 			return new byte[0];
 		}
 
