@@ -62,7 +62,7 @@ namespace SQLite
 		/// Gets the SQLite library version number. 3007014 would be v3.7.14
 		/// </summary>
         [Obsolete("Use LibraryVersion instead.")]
-        public int LibVersionNumber => LibraryVersion.ToInt32();
+        public int LibVersionNumber => SQLite3.LibraryVersionInt32;
 
 		/// <summary>
 		/// Whether Trace lines should be written that show the execution time of queries.
@@ -109,7 +109,7 @@ namespace SQLite
 		/// Gets the SQLite library version number. 3007014 would be v3.7.14
 		/// </summary>
 	    public SQLiteVersion LibraryVersion => SQLite3.LibraryVersion;
-		
+
 #if !NO_SQLITEPCL_RAW_BATTERIES
 		static SQLiteConnection ()
 		{
@@ -292,7 +292,7 @@ namespace SQLite
 		/// <param name="map">
 		/// The TableMapping used to identify the table.
 		/// </param>
-		public int DropTable (TableMapping map) 
+		public int DropTable (TableMapping map)
 		{
 			return Execute($"drop table if exists \"{map.TableName}\"");
 		}
@@ -348,11 +348,11 @@ namespace SQLite
 				var decl = string.Join (",\n", decls.ToArray ());
 				query += decl;
 				query += ")";
-				
+
 				if(map.WithoutRowId) {
 					query += " without rowid";
 				}
-				
+
                 Result r;
                 using (var cmd = NewCommand(query))
                     r = cmd.Execute(null);
@@ -565,7 +565,7 @@ namespace SQLite
 		/// </summary>
 		/// <returns>The columns contains in the table.</returns>
 		/// <param name="tableName">Table name.</param>
-		public List<ColumnInfo> GetTableInfo (string tableName) 
+		public List<ColumnInfo> GetTableInfo (string tableName)
 		{
 			return Query<ColumnInfo> ($"pragma table_info(\"{tableName}\")");
 		}
@@ -623,7 +623,7 @@ namespace SQLite
                 cmd = NewCommand(cmdText);
             return cmd;
         }
-		
+
         private SQLiteCommand GetCachedCommand(string commandName)
         {
             SQLiteCommand cachedCommand;
@@ -815,7 +815,7 @@ namespace SQLite
             var result = cmd.ExecuteQuery<object>(map, args);
             return result;
         }
-		
+
 		/// <summary>
 		/// The enumerator (retrieved by calling GetEnumerator() on the result of this method)
 		/// will call sqlite3_step on each call to MoveNext, so the database
@@ -1094,8 +1094,8 @@ namespace SQLite
         /// <param name="noThrow"></param>
         public void RollbackTo(string savepoint, bool noThrow = false)
         {
-            // Rolling back without a TO clause rolls backs all transactions 
-            //    and leaves the transaction stack empty.   
+            // Rolling back without a TO clause rolls backs all transactions
+            //    and leaves the transaction stack empty.
             try
             {
                 if (String.IsNullOrEmpty(savepoint))
@@ -1421,7 +1421,7 @@ namespace SQLite
                 if (col.IsPK && col.IsAutoInc && col.ColumnType == typeof(long) && Object.Equals(value, 0L))
                     value = null;
 
-                // if value is null and column has default attribute 
+                // if value is null and column has default attribute
                 if (value == null && col.HasDefaultValue)
                     value = col.DefaultValue;
 
@@ -1840,7 +1840,7 @@ namespace SQLite
                 {
                     count = updateCmd.ExecuteNonQuery(ps.ToArray());
                 }
-                catch (SQLiteException ex) 
+                catch (SQLiteException ex)
                 {
 					ex.PopulateColumnFromTableMapping(map);
 
