@@ -313,6 +313,74 @@ namespace SQLite
 			var result = CreateTableResult.Created;
 			var existingCols = GetTableInfo (map.TableName);
 
+            string SqlType (TableMapping.Column p, bool storeDateTimeAsTicks)
+            {
+                var clrType = p.ColumnType;
+                if (clrType == typeof (Boolean) || clrType == typeof (Byte) || clrType == typeof (UInt16) || clrType == typeof (SByte) || clrType == typeof (Int16) || clrType == typeof (Int32) || clrType == typeof (UInt32) || clrType == typeof (Int64)) {
+                    return "integer";
+                }
+                else if (clrType == typeof (Single) || clrType == typeof (Double) || clrType == typeof (Decimal)) {
+                    return "float";
+                }
+                else if (clrType == typeof (String) || clrType == typeof (StringBuilder) || clrType == typeof (Uri) || clrType == typeof (UriBuilder)) {
+                    int? len = p.MaxStringLength;
+
+                    if (len.HasValue)
+                        return "varchar(" + len.Value + ")";
+
+                    return "varchar";
+                }
+                else if (clrType == typeof (TimeSpan)) {
+                    return "bigint";
+                }
+                else if (clrType == typeof (DateTime)) {
+                    return storeDateTimeAsTicks ? "bigint" : "datetime";
+                }
+                else if (clrType == typeof (DateTimeOffset)) {
+                    return "bigint";
+                }
+                else if (clrType == typeof (byte[])) {
+                    return "blob";
+                }
+                else if (clrType == typeof (Guid)) {
+                    return "varchar(36)";
+                }
+                else {
+                    var enumInfo = EnumCache.GetInfo(clrType);
+                    if (enumInfo.IsEnum)
+                    {
+                        if (enumInfo.StoreAsText)
+                            return "varchar";
+                        else
+                            return "integer";
+                    }
+
+                    throw new NotSupportedException ("Cannot store type: " + clrType);
+                }
+            };
+
+            string SqlDecl (TableMapping.Column p, bool storeDateTimeAsTicks)
+            {
+                string decl = "\"" + p.Name + "\" " + SqlType (p, storeDateTimeAsTicks) + " ";
+
+                if (p.IsPK) {
+                    decl += "primary key ";
+                }
+                if (p.IsAutoInc) {
+                    decl += "autoincrement ";
+                }
+                if (!p.IsNullable) {
+                    decl += "not null ";
+                }
+                if (!string.IsNullOrEmpty (p.Collation)) {
+                    decl += "collate " + p.Collation + " ";
+                }
+                if (p.HasDefaultValue)
+                    decl += $"default(\'{p.DefaultValue}\')";
+
+                return decl;
+            };
+
 			// Create or migrate it
 			if (existingCols.Count == 0) {
 
@@ -325,7 +393,7 @@ namespace SQLite
 
 				// Build query.
 				var query = "create " + @virtual + "table if not exists \"" + map.TableName + "\" " + @using + "(\n";
-				var decls = map.Columns.Select (p => Orm.SqlDecl (p, StoreDateTimeAsTicks));
+				var decls = map.Columns.Select (p => SqlDecl (p, StoreDateTimeAsTicks));
 				var decl = string.Join (",\n", decls.ToArray ());
 				query += decl;
 				query += ")";
@@ -342,8 +410,34 @@ namespace SQLite
 			}
 			else {
 				result = CreateTableResult.Migrated;
-				MigrateTable (map, existingCols);
-			}
+
+                var toBeAdded = new List<TableMapping.Column> ();
+
+                foreach (var p in map.Columns) {
+                    var found = false;
+                    foreach (var c in existingCols) {
+                        found = (string.Compare (p.Name, c.Name, StringComparison.OrdinalIgnoreCase) == 0);
+                        if (found)
+                            break;
+                    }
+                    if (!found) {
+                        toBeAdded.Add (p);
+                    }
+                }
+
+                Result r = Result.Done;
+                foreach (var p in toBeAdded) {
+                    var addCol = "alter table \"" + map.TableName + "\" add column " + SqlDecl (p, StoreDateTimeAsTicks);
+
+                    using (var cmd = NewCommand(addCol))
+                        r = cmd.Execute(null);
+
+                    if (r != Result.Done)
+                        break;
+                }
+
+                result = r == Result.Done ? CreateTableResult.Migrated : CreateTableResult.ErrorMigrating;
+            }
 
             var success = true;
             var indexes = map.GetIndexs();
@@ -549,28 +643,6 @@ namespace SQLite
 		public List<ColumnInfo> GetTableInfo (string tableName)
 		{
 			return Query<ColumnInfo> ($"pragma table_info(\"{tableName}\")");
-		}
-
-		private void MigrateTable (TableMapping map, List<ColumnInfo> existingCols)
-		{
-			var toBeAdded = new List<TableMapping.Column> ();
-
-			foreach (var p in map.Columns) {
-				var found = false;
-				foreach (var c in existingCols) {
-					found = (string.Compare (p.Name, c.Name, StringComparison.OrdinalIgnoreCase) == 0);
-					if (found)
-						break;
-				}
-				if (!found) {
-					toBeAdded.Add (p);
-				}
-			}
-
-			foreach (var p in toBeAdded) {
-				var addCol = "alter table \"" + map.TableName + "\" add column " + Orm.SqlDecl (p, StoreDateTimeAsTicks);
-				Execute (addCol);
-			}
 		}
 
         /// <summary>
@@ -1479,10 +1551,7 @@ namespace SQLite
 		/// </returns>
 		public int Insert (object obj)
 		{
-			if (obj == null) {
-				return 0;
-			}
-			return Insert (obj, "", Orm.GetType (obj));
+			return Insert (obj, null, null);
 		}
 
 		/// <summary>
@@ -1501,10 +1570,7 @@ namespace SQLite
 		/// </returns>
 		public int InsertOrReplace (object obj)
 		{
-			if (obj == null) {
-				return 0;
-			}
-			return Insert (obj, "OR REPLACE", Orm.GetType (obj));
+			return Insert (obj, "OR REPLACE", null);
 		}
 
 		/// <summary>
@@ -1523,7 +1589,7 @@ namespace SQLite
 		/// </returns>
 		public int Insert (object obj, Type objType)
 		{
-			return Insert (obj, "", objType);
+			return Insert (obj, null, objType);
 		}
 
 		/// <summary>
@@ -1564,10 +1630,7 @@ namespace SQLite
 		/// </returns>
 		public int Insert (object obj, string extra)
 		{
-			if (obj == null) {
-				return 0;
-			}
-			return Insert (obj, extra, Orm.GetType (obj));
+			return Insert (obj, extra, null);
 		}
 
 		/// <summary>
@@ -1593,7 +1656,9 @@ namespace SQLite
 				return 0;
 			}
 
-            objType = objType ?? Orm.GetType(obj);
+            extra = extra ?? "";
+            objType = objType ?? Nullable.GetUnderlyingType(obj.GetType()) ?? obj.GetType();
+
             var map = GetMapping(objType);
             var replacing = string.Compare(extra, "OR REPLACE", StringComparison.OrdinalIgnoreCase) == 0;
             var cols = replacing ? map.InsertOrReplaceColumns : map.InsertColumns;
@@ -1681,10 +1746,7 @@ namespace SQLite
 		/// </returns>
 		public int Update (object obj)
 		{
-			if (obj == null) {
-				return 0;
-			}
-            return Update(obj, "", Orm.GetType(obj), null);
+            return Update(obj, null, null, null);
 		}
 
 		/// <summary>
@@ -1701,13 +1763,9 @@ namespace SQLite
         /// <returns>
         /// The number of rows updated.
         /// </returns>
-        public int Update(object obj, string updateKey = null)
+        public int Update(object obj, string updateKey)
         {
-            if (obj == null)
-            {
-                return 0;
-            }
-            return Update(obj, "", Orm.GetType(obj), updateKey);
+            return Update(obj, null, null, updateKey);
         }
 
         /// <summary>
@@ -1726,11 +1784,7 @@ namespace SQLite
         /// </returns>
         public int Update(object obj, Type objType)
         {
-            if (obj == null)
-            {
-                return 0;
-            }
-            return Update(obj, "", objType, null);
+            return Update(obj, null, objType, null);
         }
 
         /// <summary>
@@ -1750,13 +1804,9 @@ namespace SQLite
         /// <returns>
         /// The number of rows updated.
         /// </returns>
-        public int Update(object obj, Type objType, string updateKey = null)
+        public int Update(object obj, Type objType, string updateKey)
         {
-            if (obj == null)
-            {
-                return 0;
-            }
-            return Update(obj, "", objType, updateKey);
+            return Update(obj, null, objType, updateKey);
         }
 
         /// <summary>
@@ -1779,12 +1829,13 @@ namespace SQLite
         /// </returns>
         public int Update(object obj, string extra, Type objType, string updateKey = null)
         {
-            if (obj == null)
-            {
-                return 0;
-            }
+			if (obj == null) {
+				return 0;
+			}
 
-            objType = objType ?? Orm.GetType(obj);
+            extra = extra ?? "";
+            objType = objType ?? Nullable.GetUnderlyingType(obj.GetType()) ?? obj.GetType();
+
             var map = GetMapping(objType);
             var cols = map.UpdateColumns;
 
@@ -1908,25 +1959,15 @@ namespace SQLite
 		/// <summary>
 		/// Deletes the given object from the database using its primary key.
 		/// </summary>
-		/// <param name="objectToDelete">
-		/// The object to delete. It must have a primary key designated using the PrimaryKeyAttribute.
-		/// </param>
+        /// <param name="obj">
+        /// The object to delete. It must have a primary key designated using the PrimaryKeyAttribute.
+        /// </param>
 		/// <returns>
 		/// The number of rows deleted.
 		/// </returns>
-		public int Delete (object objectToDelete)
+		public int Delete (object obj)
 		{
-			var map = GetMapping (Orm.GetType (objectToDelete));
-			var pk = map.PK;
-			if (pk == null) {
-				throw new NotSupportedException ("Cannot delete " + map.TableName + ": it has no PK");
-			}
-			var q = string.Format ("delete from \"{0}\" where \"{1}\" = ?", map.TableName, pk.Name);
-            var count = PreparedExecute(q, pk.GetValue(objectToDelete));
-            if (count > 0)
-                OnTableChanged(map, NotifyTableChangedAction.Delete);
-
-            return count;
+            return Delete(obj, null);
         }
 
 		/// <summary>
@@ -1943,29 +1984,42 @@ namespace SQLite
 		/// </typeparam>
 		public int Delete<T> (object primaryKey)
 		{
-			return Delete (primaryKey, GetMapping (typeof (T)));
+			return Delete (primaryKey, typeof(T));
 		}
 
 		/// <summary>
-		/// Deletes the object with the specified primary key.
+		/// Deletes the given object from the database using its primary key.
 		/// </summary>
-		/// <param name="primaryKey">
-		/// The primary key of the object to delete.
-		/// </param>
-		/// <param name="map">
-		/// The TableMapping used to identify the table.
-		/// </param>
+        /// <param name="obj">
+        /// The object to delete. It must have a primary key designated using the PrimaryKeyAttribute.
+        /// </param>
+        /// <param name="objType">
+        /// The type of object to delete.
+        /// </param>
 		/// <returns>
-		/// The number of objects deleted.
+		/// The number of rows deleted.
 		/// </returns>
-		public int Delete (object primaryKey, TableMapping map)
+		public int Delete (object obj, Type objType)
 		{
+            if (obj == null) {
+                return 0;
+            }
+
+            objType = objType ?? Nullable.GetUnderlyingType(obj.GetType()) ?? obj.GetType();
+
+			var map = GetMapping (objType);
 			var pk = map.PK;
 			if (pk == null) {
-                throw new NotSupportedException("Cannot delete " + map.TableName + ": it has no PK");
-            }
-            var q = string.Format("delete from \"{0}\" where \"{1}\" = ?", map.TableName, pk.Name);
-            var count = PreparedExecute(q, primaryKey);
+				throw new NotSupportedException ("Cannot delete " + map.TableName + ": it has no PK");
+			}
+			var q = string.Format ("delete from \"{0}\" where \"{1}\" = ?", map.TableName, pk.Name);
+            var arg = obj;
+
+            // if the object is related to this table, then get the value from the property, else we assume the obj is the primary key value
+            if (map.IsObjectRelated(obj))
+                arg = pk.GetValue(obj);
+
+            var count = PreparedExecute(q, arg);
             if (count > 0)
                 OnTableChanged(map, NotifyTableChangedAction.Delete);
 
@@ -1985,8 +2039,7 @@ namespace SQLite
 		/// </typeparam>
 		public int DeleteAll<T> ()
 		{
-			var map = GetMapping (typeof (T));
-			return DeleteAll (map);
+			return DeleteAll (typeof(T));
 		}
 
 		/// <summary>
@@ -1994,18 +2047,20 @@ namespace SQLite
 		/// WARNING WARNING: Let me repeat. It deletes ALL the objects from the
 		/// specified table. Do you really want to do that?
 		/// </summary>
-		/// <param name="map">
-		/// The TableMapping used to identify the table.
-		/// </param>
+        /// <param name="objType">
+        /// The type of object to delete.
+        /// </param>
 		/// <returns>
 		/// The number of objects deleted.
 		/// </returns>
-		public int DeleteAll (TableMapping map)
+		public int DeleteAll (Type objType)
 		{
+			var map = GetMapping (objType);
 			var query = string.Format ("delete from \"{0}\"", map.TableName);
             var count = PreparedExecute(query);
 			if (count > 0)
 				OnTableChanged (map, NotifyTableChangedAction.Delete);
+
 			return count;
 		}
 

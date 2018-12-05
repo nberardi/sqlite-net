@@ -96,7 +96,7 @@ namespace SQLite
         public IEnumerable<T> ExecuteQuery<T>(TableMapping map, object[] source)
         {
             CheckDisposed();
-            Log(nameof(Execute), source);
+            Log(nameof(ExecuteQuery), source);
             OnExecutionStarted();
 
             var sw = Stopwatch.StartNew();
@@ -391,7 +391,8 @@ namespace SQLite
 							SQLite3.BindInt32 (stmt, index, enumIntValue);
 					}
 					else {
-						throw new NotSupportedException ("Cannot store type: " + Orm.GetType (value));
+                        var type = value.GetType();
+						throw new NotSupportedException ("Cannot store type: " + type);
 					}
 				}
 			}

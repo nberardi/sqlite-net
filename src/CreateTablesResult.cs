@@ -31,7 +31,8 @@ namespace SQLite
 	{
 		Created,
 		Migrated,
-        Error
+        Error,
+        ErrorMigrating
 	}
 
     public class CreateTablesResult

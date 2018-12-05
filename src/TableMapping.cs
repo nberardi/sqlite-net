@@ -87,7 +87,7 @@ namespace SQLite
         private Type Schema { get; }
 
         public string TableName { get; }
-		
+
 		public bool WithoutRowId { get; }
 
         public Column[] Columns { get; }
@@ -97,7 +97,7 @@ namespace SQLite
 		public string GetByPrimaryKeySql { get; private set; }
 
 		public CreateFlags CreateFlags { get; private set; }
-		
+
         private readonly Column _autoPk;
         private Column[] _insertColumns;
         private Column[] _insertOrReplaceColumns;
@@ -120,11 +120,7 @@ namespace SQLite
             Schema = _mapper.GetSchema(type);
             var schemaInfo = Schema.GetTypeInfo();
 
-			var tableAttr =
-                schemaInfo.CustomAttributes
-						.Where (x => x.AttributeType == typeof (TableAttribute))
-						.Select (x => (TableAttribute)Orm.InflateAttribute (x))
-						.FirstOrDefault ();
+			var tableAttr = schemaInfo.GetCustomAttributes().OfType<TableAttribute>().FirstOrDefault();
 
             TableName = (tableAttr != null && !string.IsNullOrEmpty(tableAttr.Name)) ? tableAttr.Name : Schema.Name;
 			WithoutRowId = tableAttr != null ? tableAttr.WithoutRowId : false;
@@ -141,7 +137,7 @@ namespace SQLite
                     PK = c;
                 }
             }
-			
+
             HasAutoIncPK = _autoPk != null;
             GetByPrimaryKeySql = PK != null
                 ? $"select * from \"{TableName}\" where \"{PK.Name}\" = ?"
@@ -181,6 +177,13 @@ namespace SQLite
             return indexes.Values.ToList();
         }
 
+        public bool IsObjectRelated(object obj)
+        {
+            if (obj == null)
+                return false;
+
+            return Schema.IsAssignableFrom(obj.GetType());
+        }
 
         public object CreateInstance() => _mapper.CreateInstance(Schema);
 
@@ -312,6 +315,9 @@ namespace SQLite
 
             public Column(PropertyInfo prop, Action<PropertyInfo, object, object> setValue, Func<PropertyInfo, object, object> getValue, CreateFlags createFlags)
 			{
+                const string ImplicitPkName = "Id";
+                const string ImplicitIndexSuffix = "Id";
+
                 var colAttr = (ColumnAttribute) prop.GetCustomAttributes(typeof(ColumnAttribute), true).FirstOrDefault();
 
                 _prop = prop;
@@ -327,31 +333,34 @@ namespace SQLite
                 Name = colAttr == null ? prop.Name : colAttr.Name;
                 //If this type is Nullable<T> then Nullable.GetUnderlyingType returns the T, otherwise it returns null, so get the actual type instead
                 ColumnType = Nullable.GetUnderlyingType(PropertyType) ?? PropertyType;
+
                 var columnTypeInfo = ColumnType.GetTypeInfo();
+                IsEnum = columnTypeInfo.IsEnum;
 
-                Collation = Orm.Collation(prop);
+                var attr = prop.GetCustomAttributes(true);
 
-                IsPK = Orm.IsPK(prop) || createFlags.HasFlag(CreateFlags.ImplicitPK) && String.Equals(prop.Name, Orm.ImplicitPkName, StringComparison.OrdinalIgnoreCase);
+                Collation = attr.OfType<CollationAttribute>().FirstOrDefault()?.Value ?? "";
 
-				var isAuto = Orm.IsAutoInc (prop) || (IsPK && ((createFlags & CreateFlags.AutoIncPK) == CreateFlags.AutoIncPK));
+                IsPK = attr.OfType<PrimaryKeyAttribute>().Any() || (createFlags.HasFlag(CreateFlags.ImplicitPK) && String.Equals(prop.Name, ImplicitPkName, StringComparison.OrdinalIgnoreCase));
+
+				var isAuto = attr.OfType<AutoIncrementAttribute>().Any() || (IsPK && createFlags.HasFlag(CreateFlags.AutoIncPK));
 				IsAutoGuid = isAuto && ColumnType == typeof (Guid);
 				IsAutoInc = isAuto && !IsAutoGuid;
 
-				Indices = Orm.GetIndices (prop);
+				Indices = attr.OfType<IndexedAttribute>();
+
 				if (!Indices.Any ()
 					&& !IsPK
-					&& ((createFlags & CreateFlags.ImplicitIndex) == CreateFlags.ImplicitIndex)
-					&& Name.EndsWith (Orm.ImplicitIndexSuffix, StringComparison.OrdinalIgnoreCase)
+					&& createFlags.HasFlag(CreateFlags.ImplicitIndex)
+					&& Name.EndsWith (ImplicitIndexSuffix, StringComparison.OrdinalIgnoreCase)
 					) {
 					Indices = new IndexedAttribute[] { new IndexedAttribute () };
 				}
-				IsNullable = !(IsPK || Orm.IsMarkedNotNull (prop));
+				IsNullable = !(IsPK || attr.OfType<NotNullAttribute>().Any());
 
-                IsEnum = columnTypeInfo.IsEnum;
-
-				MaxStringLength = Orm.MaxStringLength (prop);
-                DefaultValue = Orm.GetDefaultValue(prop);
-				StoreAsText = prop.PropertyType.GetTypeInfo ().CustomAttributes.Any (x => x.AttributeType == typeof (StoreAsTextAttribute));
+				MaxStringLength = attr.OfType<MaxLengthAttribute>().FirstOrDefault()?.Value;
+                DefaultValue = attr.OfType<DefaultAttribute>().FirstOrDefault()?.Value;
+				StoreAsText = attr.OfType<StoreAsTextAttribute>().Any();
 			}
 
             public void SetValue(object obj, object val) => _setValue(_prop, obj, val);
