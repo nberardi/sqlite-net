@@ -29,7 +29,7 @@ namespace SQLite
 {
     public class SQLiteException : Exception
     {
-		public TableMapping.Column Column { get; private set; }
+		public TableColumn Column { get; private set; }
 
 		public Result Result { get; }
         public ExtendedResult ExtendedResult { get; }

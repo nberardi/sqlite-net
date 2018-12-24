@@ -32,14 +32,14 @@ namespace SQLite
 {
     public interface ITableMapper
     {
-        List<TableMapping.Column> GetColumns(Type t, CreateFlags createFlags = CreateFlags.None);
+        List<TableColumn> GetColumns(Type t, CreateFlags createFlags = CreateFlags.None);
 
         object CreateInstance(Type t);
 
         Type GetSchema(Type t);
     }
 
-    public class TableMapping
+    public partial class TableMapping
     {
         private static readonly ConcurrentTableDictionary _mappings = new ConcurrentTableDictionary();
 
@@ -90,20 +90,20 @@ namespace SQLite
 
 		public bool WithoutRowId { get; }
 
-        public Column[] Columns { get; }
+        public TableColumn[] Columns { get; }
 
-        public Column PK { get; }
+        public TableColumn PK { get; }
 
 		public string GetByPrimaryKeySql { get; private set; }
 
 		public CreateFlags CreateFlags { get; private set; }
 
-        private readonly Column _autoPk;
-        private Column[] _insertColumns;
-        private Column[] _insertOrReplaceColumns;
-        private Dictionary<string, Column> _columnNameIndex;
-        private Dictionary<string, Column> _columnPropertyNameIndex;
-        private Column[] _updateColumns;
+        private readonly TableColumn _autoPk;
+        private TableColumn[] _insertColumns;
+        private TableColumn[] _insertOrReplaceColumns;
+        private Dictionary<string, TableColumn> _columnNameIndex;
+        private Dictionary<string, TableColumn> _columnPropertyNameIndex;
+        private TableColumn[] _updateColumns;
 
         private TableMapping(Type type, CreateFlags createFlags = CreateFlags.None)
 		{
@@ -216,180 +216,30 @@ namespace SQLite
             _autoPk?.SetValue(obj, Convert.ChangeType(id, _autoPk.ColumnType, null));
         }
 
-        public Column[] UpdateColumns => _updateColumns ?? (_updateColumns = Columns.Where(c => !c.IsPK).ToArray());
+        public TableColumn[] UpdateColumns => _updateColumns ?? (_updateColumns = Columns.Where(c => !c.IsPK).ToArray());
 
-        public Column[] InsertColumns => _insertColumns ?? (_insertColumns = Columns.Where(c => !c.IsAutoInc).ToArray());
+        public TableColumn[] InsertColumns => _insertColumns ?? (_insertColumns = Columns.Where(c => !c.IsAutoInc).ToArray());
 
-        public Column[] InsertOrReplaceColumns => _insertOrReplaceColumns ?? (_insertOrReplaceColumns = Columns.ToArray());
+        public TableColumn[] InsertOrReplaceColumns => _insertOrReplaceColumns ?? (_insertOrReplaceColumns = Columns.ToArray());
 
-        private Dictionary<string, Column> ColumnNameIndex => _columnNameIndex ?? (_columnNameIndex = Columns.ToDictionary(x => x.Name));
+        private Dictionary<string, TableColumn> ColumnNameIndex => _columnNameIndex ?? (_columnNameIndex = Columns.ToDictionary(x => x.Name));
 
-        private Dictionary<string, Column> ColumnPropertyNameIndex => _columnPropertyNameIndex ?? (_columnPropertyNameIndex = Columns.ToDictionary(x => x.PropertyName));
+        private Dictionary<string, TableColumn> ColumnPropertyNameIndex => _columnPropertyNameIndex ?? (_columnPropertyNameIndex = Columns.ToDictionary(x => x.PropertyName));
 
-        public Column FindColumnWithPropertyName(string propertyName)
+        public TableColumn FindColumnWithPropertyName(string propertyName)
         {
-            Column col = null;
+            TableColumn col = null;
             ColumnPropertyNameIndex.TryGetValue(propertyName, out col);
             return col;
         }
 
-        public Column FindColumn(string columnName)
+        public TableColumn FindColumn(string columnName)
         {
-            Column col = null;
+            TableColumn col = null;
             ColumnNameIndex.TryGetValue(columnName, out col);
             return col;
         }
 
         public override string ToString() => TableName;
-
-        private class DefaultTableMapper : ITableMapper
-        {
-            private static readonly Action<PropertyInfo, object, object> _setValue = (prop, obj, val) => prop.SetValue(obj, val, null);
-            private static readonly Func<PropertyInfo, object, object> _getValue = (prop, obj) => prop.GetValue(obj, null);
-
-            public List<TableMapping.Column> GetColumns(Type t, CreateFlags createFlags = CreateFlags.None)
-            {
-                var props = new List<PropertyInfo>();
-                var baseType = GetSchema(t);
-                var propNames = new HashSet<string>();
-                while (baseType != typeof(object))
-                {
-                    var ti = baseType.GetTypeInfo();
-                    var newProps = (
-                        from p in ti.DeclaredProperties
-                        where
-                        !propNames.Contains(p.Name) &&
-                        p.CanRead && p.CanWrite &&
-                        (p.GetMethod != null) && (p.SetMethod != null) &&
-                        (p.GetMethod.IsPublic && p.SetMethod.IsPublic) &&
-                        (!p.GetMethod.IsStatic) && (!p.SetMethod.IsStatic)
-                        select p).ToList();
-                    foreach (var p in newProps)
-                    {
-                        propNames.Add(p.Name);
-                    }
-                    props.AddRange(newProps);
-                    baseType = ti.BaseType;
-                }
-
-                var cols = new List<Column>();
-                foreach (var p in props)
-                {
-                    var ignore = p.GetCustomAttributes(typeof(IgnoreAttribute), true).Count() > 0;
-
-                    if (p.CanWrite && !ignore)
-                        cols.Add(new Column(p, _setValue, _getValue, createFlags));
-                }
-
-                return cols;
-            }
-
-            public object CreateInstance(Type t)
-            {
-                return Activator.CreateInstance(t);
-            }
-
-            public Type GetSchema(Type t) => t;
-        }
-
-		public class Column
-		{
-            private readonly PropertyInfo _prop;
-            private readonly Action<PropertyInfo, object, object> _setValue;
-            private readonly Func<PropertyInfo, object, object> _getValue;
-
-            public string Name { get; }
-
-            public string PropertyName { get; }
-
-            /// <summary>
-            /// The difference between this and <see cref="ColumnType"/> is that this doesn't unwrap nullable value types.
-            /// </summary>
-            public Type PropertyType { get; }
-
-            public object PropertyDefaultValue { get; }
-
-            public Type ColumnType { get; }
-
-            public string Collation { get; }
-
-            public bool IsEnum { get; }
-
-            public bool IsAutoInc { get; }
-
-            public bool IsAutoGuid { get; }
-
-            public bool IsPK { get; }
-
-            public bool IsUnique => IsPK || Indices.Any(x => x.Unique);
-
-            public IEnumerable<IndexedAttribute> Indices { get; }
-
-            public bool IsNullable { get; }
-
-            public int? MaxStringLength { get; }
-
-            public object DefaultValue { get; private set; }
-
-            public bool HasDefaultValue => DefaultValue != null;
-
-            public bool StoreAsText { get; }
-
-            public Column(PropertyInfo prop, Action<PropertyInfo, object, object> setValue, Func<PropertyInfo, object, object> getValue, CreateFlags createFlags)
-			{
-                const string ImplicitPkName = "Id";
-                const string ImplicitIndexSuffix = "Id";
-
-                var colAttr = (ColumnAttribute) prop.GetCustomAttributes(typeof(ColumnAttribute), true).FirstOrDefault();
-
-                _prop = prop;
-                PropertyName = prop.Name;
-                PropertyType = prop.PropertyType;
-
-                var propertyTypeInfo = PropertyType.GetTypeInfo();
-                PropertyDefaultValue = (PropertyType != null && propertyTypeInfo.IsValueType && Nullable.GetUnderlyingType(PropertyType) == null) ? Activator.CreateInstance(PropertyType) : null;
-
-                _setValue = setValue;
-                _getValue = getValue;
-
-                Name = colAttr == null ? prop.Name : colAttr.Name;
-                //If this type is Nullable<T> then Nullable.GetUnderlyingType returns the T, otherwise it returns null, so get the actual type instead
-                ColumnType = Nullable.GetUnderlyingType(PropertyType) ?? PropertyType;
-
-                var columnTypeInfo = ColumnType.GetTypeInfo();
-                IsEnum = columnTypeInfo.IsEnum;
-
-                var attr = prop.GetCustomAttributes(true);
-
-                Collation = attr.OfType<CollationAttribute>().FirstOrDefault()?.Value ?? "";
-
-                IsPK = attr.OfType<PrimaryKeyAttribute>().Any() || (createFlags.HasFlag(CreateFlags.ImplicitPK) && String.Equals(prop.Name, ImplicitPkName, StringComparison.OrdinalIgnoreCase));
-
-				var isAuto = attr.OfType<AutoIncrementAttribute>().Any() || (IsPK && createFlags.HasFlag(CreateFlags.AutoIncPK));
-				IsAutoGuid = isAuto && ColumnType == typeof (Guid);
-				IsAutoInc = isAuto && !IsAutoGuid;
-
-				Indices = attr.OfType<IndexedAttribute>();
-
-				if (!Indices.Any ()
-					&& !IsPK
-					&& createFlags.HasFlag(CreateFlags.ImplicitIndex)
-					&& Name.EndsWith (ImplicitIndexSuffix, StringComparison.OrdinalIgnoreCase)
-					) {
-					Indices = new IndexedAttribute[] { new IndexedAttribute () };
-				}
-				IsNullable = !(IsPK || attr.OfType<NotNullAttribute>().Any());
-
-				MaxStringLength = attr.OfType<MaxLengthAttribute>().FirstOrDefault()?.Value;
-                DefaultValue = attr.OfType<DefaultAttribute>().FirstOrDefault()?.Value;
-				StoreAsText = attr.OfType<StoreAsTextAttribute>().Any();
-			}
-
-            public void SetValue(object obj, object val) => _setValue(_prop, obj, val);
-
-            public object GetValue(object obj) => _getValue(_prop, obj);
-
-            public override string ToString() => $"{Name} ({ColumnType.Name})";
-        }
     }
 }

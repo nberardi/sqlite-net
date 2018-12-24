@@ -115,7 +115,7 @@ namespace SQLite
                     for (int i = 0; i < source.Length; i++)
                         BindParameter(Statement, i + 1, source[i], Connection.StoreDateTimeAsTicks);
 
-                var cols = new TableMapping.Column[SQLite3.ColumnCount(Statement)];
+                var cols = new TableColumn[SQLite3.ColumnCount(Statement)];
 
                 for (int i = 0; i < cols.Length; i++)
                 {

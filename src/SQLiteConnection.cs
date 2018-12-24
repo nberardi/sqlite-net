@@ -313,7 +313,7 @@ namespace SQLite
 			var result = CreateTableResult.Created;
 			var existingCols = GetTableInfo (map.TableName);
 
-            string SqlType (TableMapping.Column p, bool storeDateTimeAsTicks)
+            string SqlType (TableColumn p, bool storeDateTimeAsTicks)
             {
                 var clrType = p.ColumnType;
                 if (clrType == typeof (Boolean) || clrType == typeof (Byte) || clrType == typeof (UInt16) || clrType == typeof (SByte) || clrType == typeof (Int16) || clrType == typeof (Int32) || clrType == typeof (UInt32) || clrType == typeof (Int64)) {
@@ -359,7 +359,7 @@ namespace SQLite
                 }
             };
 
-            string SqlDecl (TableMapping.Column p, bool storeDateTimeAsTicks)
+            string SqlDecl (TableColumn p, bool storeDateTimeAsTicks)
             {
                 string decl = "\"" + p.Name + "\" " + SqlType (p, storeDateTimeAsTicks) + " ";
 
@@ -411,7 +411,7 @@ namespace SQLite
 			else {
 				result = CreateTableResult.Migrated;
 
-                var toBeAdded = new List<TableMapping.Column> ();
+                var toBeAdded = new List<TableColumn> ();
 
                 foreach (var p in map.Columns) {
                     var found = false;
