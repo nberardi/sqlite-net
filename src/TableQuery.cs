@@ -31,25 +31,22 @@ using System.Linq.Expressions;
 
 namespace SQLite
 {
-	public abstract class TableQuery
+
+    public interface ITableQuery
 	{
-		protected class Ordering
-		{
-			public string ColumnName { get; set; }
-			public bool Ascending { get; set; }
-		}
+
 	}
 
-    public class TableQuery<T> : TableQuery, IEnumerable<T>, ICloneable
+    public class TableQuery<T> : ITableQuery, IEnumerable<T>, ICloneable
 	{
 		private int? _limit;
 		private int? _offset;
 
 		private Expression _where;
-		private List<Ordering> _orderBys;
-		private TableQuery _joinInner;
+		private List<TableColumnOrder> _orderBys;
+		private ITableQuery _joinInner;
 		private Expression _joinInnerKeySelector;
-		private TableQuery _joinOuter;
+		private ITableQuery _joinOuter;
 		private Expression _joinOuterKeySelector;
 		private Expression _joinSelector;
 		private Expression _selector;
@@ -74,7 +71,7 @@ namespace SQLite
 			q._where = _where;
 			q._deferred = _deferred;
 			if (_orderBys != null) {
-				q._orderBys = new List<Ordering> (_orderBys);
+				q._orderBys = new List<TableColumnOrder> (_orderBys);
 			}
 			q._limit = _limit;
 			q._offset = _offset;
@@ -228,11 +225,11 @@ namespace SQLite
 				if (mem != null && (mem.Expression.NodeType == ExpressionType.Parameter)) {
 					var q = Clone<T> ();
 					if (q._orderBys == null) {
-						q._orderBys = new List<Ordering> ();
+						q._orderBys = new List<TableColumnOrder> ();
 					}
-					q._orderBys.Add (new Ordering {
+					q._orderBys.Add (new TableColumnOrder {
 						ColumnName = Table.FindColumnWithPropertyName (mem.Member.Name).Name,
-						Ascending = asc
+						Direction = asc ? TableColumnOrderDirection.Ascending : TableColumnOrderDirection.Decending
 					});
 					return q;
 				}
@@ -300,7 +297,7 @@ namespace SQLite
                 }
                 if ((_orderBys != null) && (_orderBys.Count > 0))
                 {
-                    var t = string.Join(", ", _orderBys.Select(o => "\"" + o.ColumnName + "\"" + (o.Ascending ? "" : " desc")).ToArray());
+                    var t = String.Join(", ", _orderBys.Select(x => x.ToString()));
                     cmdText += " order by " + t;
                 }
                 if (_limit.HasValue)

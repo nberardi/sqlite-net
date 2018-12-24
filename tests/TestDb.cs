@@ -29,9 +29,9 @@ namespace SQLite.Tests
 	{
 		[AutoIncrement, PrimaryKey]
 		public int Id { get; set; }
-        [Indexed("IX_OrderProduct", 1)]
+        [Indexed("IX_OrderProduct", Order = 1)]
 		public int OrderId { get; set; }
-        [Indexed("IX_OrderProduct", 2)]
+        [Indexed("IX_OrderProduct", Order = 1)]
         public int ProductId { get; set; }
 		public int Quantity { get; set; }
 		public decimal UnitPrice { get; set; }
@@ -53,4 +53,3 @@ namespace SQLite.Tests
 
     }
 }
-

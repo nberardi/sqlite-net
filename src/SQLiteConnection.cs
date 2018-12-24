@@ -440,12 +440,9 @@ namespace SQLite
             }
 
             var success = true;
-            var indexes = map.GetIndexs();
+            var indexes = map.GetIndexes();
             foreach (var index in indexes)
-            {
-                var columns = index.Columns.OrderBy(i => i.Order).Select(i => i.ColumnName).ToArray();
-                success = success && CreateIndex(index.IndexName, index.TableName, columns, index.Unique);
-            }
+                success = success && CreateIndex(index);
 
             result = success ? result : CreateTableResult.Error;
             return result;
@@ -540,6 +537,19 @@ namespace SQLite
 			return result;
 		}
 
+        public bool CreateIndex(TableIndex index)
+        {
+            var columns = index.Columns.Select(x => x.ToString());
+            var sql = $"create {(index.Unique ? "unique " : "")}index if not exists \"{index.IndexName}\" on \"{index.TableName}\"({String.Join(",", columns)})";
+
+            var r = Result.Error;
+
+            using (var cmd = NewCommand(sql))
+                r = cmd.Execute();
+
+            return r == Result.Done;
+        }
+
 		/// <summary>
 		/// Creates an index for the specified table and columns.
 		/// </summary>
@@ -549,14 +559,12 @@ namespace SQLite
 		/// <param name="unique">Whether the index should be unique</param>
         public bool CreateIndex(string indexName, string tableName, string[] columnNames, bool unique = false)
         {
-            const string sqlFormat = "create {2} index if not exists \"{3}\" on \"{0}\"(\"{1}\")";
-            var sql = String.Format(sqlFormat, tableName, string.Join("\", \"", columnNames), unique ? "unique" : "", indexName);
-            Result r;
-
-            using (var cmd = NewCommand(sql))
-                r = cmd.Execute(null);
-
-            return r == Result.Done;
+            return CreateIndex(new TableIndex() {
+                IndexName = indexName,
+                TableName = tableName,
+                Unique = unique,
+                Columns = columnNames.Select(x => new TableColumnOrder() { ColumnName = x}).ToList()
+            });
         }
 
 		/// <summary>

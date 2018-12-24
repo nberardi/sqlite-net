@@ -144,37 +144,59 @@ namespace SQLite
                 : $"select * from \"{TableName}\" limit 1";
         }
 
-        public List<Index> GetIndexs()
+        public List<TableIndex> GetIndexes()
         {
-            var indexes = new Dictionary<string, Index>();
+            var indexes = new Dictionary<string, List<IndexedAttribute>>();
+
+            string GetIndexName(string tableName, string columnName, IndexedAttribute attr) {
+                return !String.IsNullOrWhiteSpace(attr.Name)
+                    ? attr.Name
+                    : $"{(attr.Unique ? "UX" : "IX")}_{tableName}_{columnName}";
+            };
+
             foreach (var c in Columns)
             {
                 foreach (var i in c.Indices)
                 {
-                    var iname = i.Name ?? TableName + "_" + c.Name;
-                    Index iinfo;
-                    if (!indexes.TryGetValue(iname, out iinfo))
-                    {
-                        iinfo = new Index {
-                            IndexName = iname,
-                            TableName = TableName,
-                            Unique = i.Unique,
-                            Columns = new List<IndexedColumn>()
-                        };
-                        indexes.Add(iname, iinfo);
+                    var indexName = GetIndexName(TableName, c.Name, i);
+                    List<IndexedAttribute> list;
+
+                    if (!indexes.TryGetValue(indexName, out list)) {
+                        list = new List<IndexedAttribute>();
+                        indexes.Add(indexName, list);
                     }
 
-                    if (i.Unique != iinfo.Unique)
-                        throw new Exception("All the columns in an index must have the same value for their Unique property");
-
-                    iinfo.Columns.Add(new IndexedColumn {
-                        Order = i.Order,
-                        ColumnName = c.Name
-                    });
+                    i.ColumnName = c.Name;
+                    list.Add(i);
                 }
             }
 
-            return indexes.Values.ToList();
+            var tableIndexes = new List<TableIndex>(indexes.Count);
+            foreach(var i in indexes)
+            {
+                // don't know how this would happen
+                if (i.Value.Count == 0)
+                    throw new Exception($"The index {i.Key} doesn't have any columns.");
+
+                var unique = i.Value.First().Unique;
+                var anyNotMatchingUnique = i.Value.Where (x => x.Unique != unique).Any();
+
+                if (anyNotMatchingUnique)
+                    throw new Exception($"The index {i.Key} needs to have all Unique properties matching on columns.");
+
+                var ix = new TableIndex {
+                    IndexName = i.Key,
+                    TableName = TableName,
+                    Unique = unique,
+                    Columns = i.Value.OrderBy(x => x.Order).Select(x => new TableColumnOrder() {
+                        ColumnName = x.ColumnName,
+                        Direction = x.Direction
+                    }).ToList()
+                };
+                tableIndexes.Add(ix);
+            }
+
+            return tableIndexes;
         }
 
         public bool IsObjectRelated(object obj)
@@ -368,20 +390,6 @@ namespace SQLite
             public object GetValue(object obj) => _getValue(_prop, obj);
 
             public override string ToString() => $"{Name} ({ColumnType.Name})";
-        }
-
-        public class IndexedColumn
-        {
-            public int Order { get; set; }
-            public string ColumnName { get; set; }
-        }
-
-        public class Index
-        {
-            public string IndexName { get; set; }
-            public string TableName { get; set; }
-            public bool Unique { get; set; }
-            public List<IndexedColumn> Columns { get; set; }
         }
     }
 }

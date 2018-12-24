@@ -79,17 +79,17 @@ namespace SQLite
 	public class IndexedAttribute : Attribute
 	{
 		public string Name { get; set; }
-		public int Order { get; set; }
+		public int Order { get; set; } = 0;
 		public virtual bool Unique { get; set; }
+        public TableColumnOrderDirection Direction { get; set; } = TableColumnOrderDirection.NotDefined;
 
-		public IndexedAttribute ()
-		{
-		}
+        internal string ColumnName { get; set; }
 
-		public IndexedAttribute (string name, int order)
+		public IndexedAttribute () {}
+
+		public IndexedAttribute (string name)
 		{
 			Name = name;
-			Order = order;
 		}
 	}
 
@@ -118,8 +118,12 @@ namespace SQLite
 	{
 		public override bool Unique {
 			get { return true; }
-			set { /* throw?  */ }
+			set { /* throw? */ }
 		}
+
+        public UniqueAttribute() : base() {}
+
+        public UniqueAttribute(string name) : base(name) {}
 	}
 
 	[AttributeUsage (AttributeTargets.Property)]

@@ -18,6 +18,7 @@ namespace SQLite.Tests
 
 			[Unique (Name = "UX_Dos")]
 			public int Dos { get; set;}
+
 			[Unique (Name = "UX_Dos")]
 			public int Tres { get; set;}
 
@@ -31,43 +32,54 @@ namespace SQLite.Tests
 		}
 
 		public class IndexColumns {
-			public int seqno { get; set;} 
-			public int cid { get; set;} 
-			public string name { get; set; } 
+			public int seqno { get; set;}
+			public int cid { get; set;}
+			public string name { get; set; }
 		}
 
 		public class IndexInfo {
-			public int seq { get; set;} 
-			public string name { get; set;} 
+			public int seq { get; set;}
+			public string name { get; set;}
 			public bool unique { get; set;}
 		}
 
-		[Test]
-		public void CreateUniqueIndexes ()
-		{
-			using (var db = TestDb.GetMemoryDb()) {
-				db.CreateTable<TheOne> ();
-				var indexes = db.Query<IndexInfo> ("PRAGMA INDEX_LIST (\"TheOne\")");
-				Assert.AreEqual (4, indexes.Count, "# of indexes");
-				CheckIndex (db, indexes, "UX_Uno", true, "Uno");
-				CheckIndex (db, indexes, "UX_Dos", true, "Dos", "Tres");
-				CheckIndex (db, indexes, "UX_Uno_bool", true, "Cuatro");
-				CheckIndex (db, indexes, "UX_Dos_bool", true, "Cinco", "Seis");
-			}
-		}
+        private SQLiteConnection GetConnection() {
+            var db = TestDb.GetMemoryDb();
+            var response = db.CreateTable<TheOne>();
+            Assert.That(response, Is.EqualTo(CreateTableResult.Created));
+            return db;
+        }
 
-		static void CheckIndex (SQLiteConnection db, List<IndexInfo> indexes, string iname, bool unique, params string [] columns)
+        public static object[] CheckIndexCases =
+        {
+            new object[] { "UX_Uno", true, new string[] { "Uno" } },
+            new object[] { "UX_Dos", true, new string[] { "Dos", "Tres"} },
+            new object[] { "UX_Uno_bool", true, new string[] { "Cuatro" } },
+            new object[] { "UX_Dos_bool", true, new string[] { "Cinco", "Seis" } }
+        };
+
+        [TestCaseSource("CheckIndexCases")]
+		public void CheckIndex (string iname, bool unique, string [] columns)
 		{
 			if (columns == null)
-				throw new Exception ("Don't!");
-			var idx = indexes.SingleOrDefault (i => i.name == iname);
-			Assert.IsNotNull (idx, String.Format ("Index {0} not found", iname));
-			Assert.AreEqual (idx.unique, unique, String.Format ("Index {0} unique expected {1} but got {2}", iname, unique, idx.unique));
-			var idx_columns = db.Query<IndexColumns> (String.Format ("PRAGMA INDEX_INFO (\"{0}\")", iname));
-			Assert.AreEqual (columns.Length, idx_columns.Count, String.Format ("# of columns: expected {0}, got {1}", columns.Length, idx_columns.Count));
-			foreach (var col in columns) {
-				Assert.IsNotNull (idx_columns.SingleOrDefault (c => c.name == col), String.Format ("Column {0} not in index {1}", col, idx.name));
-			}
+				Assert.Fail("Columns are required for the test to succeed.");
+
+            using (var db = GetConnection()) {
+
+				var indexes = db.Query<IndexInfo> ($"PRAGMA INDEX_LIST (\"{nameof(TheOne)}\")");
+				Assert.That (indexes.Count, Is.EqualTo(4), "Wrong number of indexes created for table.");
+
+                var idx = indexes.SingleOrDefault (i => i.name == iname);
+
+                Assert.IsNotNull (idx, String.Format ("Index {0} not found", iname));
+                Assert.AreEqual (idx.unique, unique, String.Format ("Index {0} unique expected {1} but got {2}", iname, unique, idx.unique));
+
+                var idx_columns = db.Query<IndexColumns> (String.Format ("PRAGMA INDEX_INFO (\"{0}\")", iname));
+                Assert.AreEqual (columns.Length, idx_columns.Count, String.Format ("# of columns: expected {0}, got {1}", columns.Length, idx_columns.Count));
+
+                foreach (var col in columns)
+                    Assert.That(idx_columns.Any(c => c.name == col), $"Column {col} not in index {idx.name}.");
+            }
 		}
 	}
 }
