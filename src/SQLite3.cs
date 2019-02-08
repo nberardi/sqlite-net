@@ -26,6 +26,7 @@ using System.Linq;
 using Sqlite3DatabaseHandle = SQLitePCL.sqlite3;
 using Sqlite3Statement = SQLitePCL.sqlite3_stmt;
 using Sqlite3 = SQLitePCL.raw;
+using System.Text;
 
 #pragma warning disable 1591 // XML Doc Comments
 // ReSharper disable All
@@ -178,5 +179,48 @@ namespace SQLite
 		{
 			return (Result)Sqlite3.sqlite3_enable_load_extension (db, onoff);
 		}
+
+        public static string GetSqlType (Type clrType, bool storeDateTimeAsTicks = true, int? maxStringLength = null)
+        {
+            if (clrType == typeof (Boolean) || clrType == typeof (Byte) || clrType == typeof (UInt16) || clrType == typeof (SByte) || clrType == typeof (Int16) || clrType == typeof (Int32) || clrType == typeof (UInt32) || clrType == typeof (Int64)) {
+                return "integer";
+            }
+            else if (clrType == typeof (Single) || clrType == typeof (Double) || clrType == typeof (Decimal)) {
+                return "float";
+            }
+            else if (clrType == typeof (String) || clrType == typeof (StringBuilder) || clrType == typeof (Uri) || clrType == typeof (UriBuilder)) {
+                if (maxStringLength.HasValue)
+                    return "varchar(" + maxStringLength.Value + ")";
+
+                return "varchar";
+            }
+            else if (clrType == typeof (TimeSpan)) {
+                return "bigint";
+            }
+            else if (clrType == typeof (DateTime)) {
+                return storeDateTimeAsTicks ? "bigint" : "datetime";
+            }
+            else if (clrType == typeof (DateTimeOffset)) {
+                return "bigint";
+            }
+            else if (clrType == typeof (byte[])) {
+                return "blob";
+            }
+            else if (clrType == typeof (Guid)) {
+                return "varchar(36)";
+            }
+            else {
+                var enumInfo = EnumCache.GetInfo(clrType);
+                if (enumInfo.IsEnum)
+                {
+                    if (enumInfo.StoreAsText)
+                        return "varchar";
+                    else
+                        return "integer";
+                }
+
+                throw new NotSupportedException ("Cannot store type: " + clrType);
+            }
+        }
 	}
 }

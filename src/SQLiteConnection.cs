@@ -77,7 +77,6 @@ namespace SQLite
 		/// <summary>
 		/// Whether to writer queries to <see cref="Tracer"/> during execution.
 		/// </summary>
-		/// <value>The tracer.</value>
 		public bool Trace { get; set; }
 
         /// <summary>
@@ -313,55 +312,9 @@ namespace SQLite
 			var result = CreateTableResult.Created;
 			var existingCols = GetTableInfo (map.TableName);
 
-            string SqlType (TableColumn p, bool storeDateTimeAsTicks)
-            {
-                var clrType = p.ColumnType;
-                if (clrType == typeof (Boolean) || clrType == typeof (Byte) || clrType == typeof (UInt16) || clrType == typeof (SByte) || clrType == typeof (Int16) || clrType == typeof (Int32) || clrType == typeof (UInt32) || clrType == typeof (Int64)) {
-                    return "integer";
-                }
-                else if (clrType == typeof (Single) || clrType == typeof (Double) || clrType == typeof (Decimal)) {
-                    return "float";
-                }
-                else if (clrType == typeof (String) || clrType == typeof (StringBuilder) || clrType == typeof (Uri) || clrType == typeof (UriBuilder)) {
-                    int? len = p.MaxStringLength;
-
-                    if (len.HasValue)
-                        return "varchar(" + len.Value + ")";
-
-                    return "varchar";
-                }
-                else if (clrType == typeof (TimeSpan)) {
-                    return "bigint";
-                }
-                else if (clrType == typeof (DateTime)) {
-                    return storeDateTimeAsTicks ? "bigint" : "datetime";
-                }
-                else if (clrType == typeof (DateTimeOffset)) {
-                    return "bigint";
-                }
-                else if (clrType == typeof (byte[])) {
-                    return "blob";
-                }
-                else if (clrType == typeof (Guid)) {
-                    return "varchar(36)";
-                }
-                else {
-                    var enumInfo = EnumCache.GetInfo(clrType);
-                    if (enumInfo.IsEnum)
-                    {
-                        if (enumInfo.StoreAsText)
-                            return "varchar";
-                        else
-                            return "integer";
-                    }
-
-                    throw new NotSupportedException ("Cannot store type: " + clrType);
-                }
-            };
-
             string SqlDecl (TableColumn p, bool storeDateTimeAsTicks)
             {
-                string decl = "\"" + p.Name + "\" " + SqlType (p, storeDateTimeAsTicks) + " ";
+                string decl = "\"" + p.Name + "\" " + SQLite3.GetSqlType (p.ColumnType, storeDateTimeAsTicks, p.MaxStringLength) + " ";
 
                 if (p.IsPK) {
                     decl += "primary key ";
@@ -621,36 +574,34 @@ namespace SQLite
 			return CreateIndex (map.TableName, colName, unique);
 		}
 
-		[Preserve (AllMembers = true)]
-		public class ColumnInfo
-		{
-            //public int cid { get; set; }
-
-			[Column ("name")]
-			public string Name { get; set; }
-
-            [Column ("type")]
-            public string ColumnType { get; set; }
-
-            [Column ("notnull")]
-            public int NotNull { get; set; }
-
-            //public string dflt_value { get; set; }
-
-            [Column ("pk")]
-            public int PK { get; set; }
-
-            public override string ToString() => $"{Name} ({ColumnType})";
-        }
-
 		/// <summary>
 		/// Query the built-in sqlite table_info table for a specific tables columns.
 		/// </summary>
-		/// <returns>The columns contains in the table.</returns>
+		/// <returns>The columns contained in the table.</returns>
 		/// <param name="tableName">Table name.</param>
-		public List<ColumnInfo> GetTableInfo (string tableName)
+		public List<SQLiteColumn> GetTableInfo (string tableName)
 		{
-			return Query<ColumnInfo> ($"pragma table_info(\"{tableName}\")");
+			return Query<SQLiteColumn> ($"pragma table_info(\"{tableName}\")");
+		}
+
+        /// <summary>
+		/// Query the built-in sqlite index_list table for a specific tables indexes.
+		/// </summary>
+		/// <returns>The indexes contained in the table.</returns>
+		/// <param name="tableName">Table name.</param>
+		public List<SQLiteIndex> GetTableIndexInfo (string tableName)
+		{
+			return Query<SQLiteIndex> ($"pragma index_list(\"{tableName}\")");
+		}
+
+        /// <summary>
+		/// Query the built-in sqlite index_info table for a specific index columns.
+		/// </summary>
+		/// <returns>The columns contained in the index.</returns>
+		/// <param name="indexName">Index name.</param>
+		public List<SQLiteIndexColumn> GetIndexInfo (string indexName)
+		{
+			return Query<SQLiteIndexColumn> ($"pragma index_info(\"{indexName}\")");
 		}
 
         /// <summary>

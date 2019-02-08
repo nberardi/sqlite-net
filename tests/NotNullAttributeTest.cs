@@ -34,12 +34,12 @@ namespace SQLite.Tests
 			public int Id { get; set; }
 		}
 
-		private IEnumerable<SQLiteConnection.ColumnInfo> GetExpectedColumnInfos (Type type)
+		private IEnumerable<SQLiteColumn> GetExpectedColumnInfos (Type type)
 		{
 			var expectedValues = from prop in type.GetProperties (BindingFlags.Public | BindingFlags.Instance | BindingFlags.SetProperty)
-								 select new SQLiteConnection.ColumnInfo {
+								 select new SQLiteColumn {
 									 Name = prop.Name,
-									 NotNull = ((prop.GetCustomAttributes (typeof (NotNullAttribute), true).Count () == 0) && (prop.GetCustomAttributes (typeof (PrimaryKeyAttribute), true).Count () == 0)) ? 0 : 1
+									 IsNotNull = !((prop.GetCustomAttributes (typeof (NotNullAttribute), true).Count () == 0) && (prop.GetCustomAttributes (typeof (PrimaryKeyAttribute), true).Count () == 0))
 								 };
 
 			return expectedValues;
@@ -55,7 +55,7 @@ namespace SQLite.Tests
 
 				var joined = from expected in GetExpectedColumnInfos (typeof (ClassWithPK))
 							 join actual in cols on expected.Name equals actual.Name
-							 where actual.NotNull != expected.NotNull
+							 where actual.IsNotNull != expected.IsNotNull
 							 select actual.Name;
 
 				Assert.AreNotEqual (0, cols.Count (), "Failed to get table info");
@@ -73,7 +73,7 @@ namespace SQLite.Tests
 
 				var joined = from expected in GetExpectedColumnInfos (typeof (NotNullNoPK))
 							 join actual in cols on expected.Name equals actual.Name
-							 where actual.NotNull != expected.NotNull
+							 where actual.IsNotNull != expected.IsNotNull
 							 select actual.Name;
 
 				Assert.AreNotEqual (0, cols.Count (), "Failed to get table info");
