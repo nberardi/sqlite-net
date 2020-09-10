@@ -253,7 +253,7 @@ namespace SQLite
 
                 if (_writeConnection != null && _writeConnection.Handle != SQLiteConnection.NullHandle)
                 {
-                    var path = raw.sqlite3_db_filename(_writeConnection.Handle, "main");
+                    var path = raw.sqlite3_db_filename(_writeConnection.Handle, "main").utf8_to_string();
                     IsInMemoryDatabase = String.IsNullOrWhiteSpace(path);
                 }
             }
@@ -514,7 +514,7 @@ namespace SQLite
                 // this will be set to null if it is an in memory database
                 // the databasePath from the connection should override the
                 // path passed in
-                databasePath = raw.sqlite3_db_filename(conn.Handle, "main");
+                databasePath = raw.sqlite3_db_filename(conn.Handle, "main").utf8_to_string();
                 conn.Close();
             }
 
@@ -540,7 +540,7 @@ namespace SQLite
                     // this will be set to null if it is an in memory database
                     // the databasePath from the connection should override the
                     // path passed in
-                    databasePath = raw.sqlite3_db_filename(conn.Handle, "main");
+                    databasePath = raw.sqlite3_db_filename(conn.Handle, "main").utf8_to_string();
                 }
 
                 // dispose of the database

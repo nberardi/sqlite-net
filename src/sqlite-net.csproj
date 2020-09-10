@@ -1,6 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
+    <RootNamespace>SQLite</RootNamespace>
   </PropertyGroup>
 
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
@@ -15,6 +16,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="SQLitePCLRaw.bundle_e_sqlite3" Version="1.1.11" />
+    <PackageReference Include="SQLitePCLRaw.bundle_e_sqlite3" Version="2.0.4" />
   </ItemGroup>
 </Project>

@@ -98,7 +98,7 @@ namespace SQLite
 
         public static string GetErrorMessageUTF8(Sqlite3DatabaseHandle db)
 		{
-			return Sqlite3.sqlite3_errmsg (db);
+			return Sqlite3.sqlite3_errmsg (db).utf8_to_string();
         }
 
 		public static int BindNull (Sqlite3Statement stmt, int index)
@@ -138,7 +138,7 @@ namespace SQLite
 
 		public static string ColumnNameUTF8 (Sqlite3Statement stmt, int index)
 		{
-			return Sqlite3.sqlite3_column_name (stmt, index);
+			return Sqlite3.sqlite3_column_name (stmt, index).utf8_to_string();
 		}
 
 		public static ColType ColumnType (Sqlite3Statement stmt, int index)
@@ -163,14 +163,14 @@ namespace SQLite
 
 		public static string ColumnStringUTF8 (Sqlite3Statement stmt, int index)
 		{
-			return Sqlite3.sqlite3_column_text (stmt, index);
+			return Sqlite3.sqlite3_column_text (stmt, index).utf8_to_string();
 		}
 
 		public static byte[] ColumnByteArray (Sqlite3Statement stmt, int index)
 		{
 			int length = Sqlite3.sqlite3_column_bytes (stmt, index);
 			if (length > 0)
-				return Sqlite3.sqlite3_column_blob (stmt, index);
+				return Sqlite3.sqlite3_column_blob (stmt, index).ToArray();
 
 			return new byte[0];
 		}
