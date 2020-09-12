@@ -24,8 +24,11 @@ namespace SQLite
 
     public abstract partial class DataAccessLayerBase : IDisposable
     {
+        ///<summary>In memory database connection string</summary>
         public const string InMemoryDatabase = ":memory:";
-        public const string NamedInMemoryDatabaseFormat = "file:{0}?mode=memory";
+
+        ///<summary>Get a named in memory database connection string</summary>
+        public static string GetNamedInMemoryDatabase(string name) => String.Format("file:{0}?mode=memory", name);
 
         [Obsolete("Do not use the write lock direction, use GetWriteConnectionLock() instead.", error: false)]
         private readonly object _writeConnectionLock = new object();
@@ -46,6 +49,7 @@ namespace SQLite
         ///<summary>The min version of SQLite that is supported.</summary>
         public virtual SQLiteVersion MinLibraryVersion => new SQLiteVersion(3000000); // 3.0.0 (should capture all SQLite3 versions)
 
+        ///<summary>The database version, executes PRAGMA user_version</summary>
         public int DatabaseVersion
         {
             get { return Read(conn => conn.ExecuteScalar<int>("PRAGMA user_version;")); }
@@ -54,10 +58,16 @@ namespace SQLite
 #endif
         }
 
+        ///<summary>Is this connection for an in memory database.</summary>
         public bool IsInMemoryDatabase { get; private set; } = false;
 
+        ///<summary>The database page count, executes PRAGMA page_count</summary>
         public long DatabasePageCount => Read(conn => conn.ExecuteScalar<long>("PRAGMA page_count;"));
+
+        ///<summary>The database page size, executes PRAGMA page_size</summary>
         public long DatabasePageSize => Read(conn => conn.ExecuteScalar<long>("PRAGMA page_size;"));
+
+        ///<summary>The database memory used in bytes.</summary>
         public long DatabaseMemoryUsed
         {
             get
@@ -73,10 +83,22 @@ namespace SQLite
             }
         }
 
+        ///<summary>This must be set to the latest database version to run migration when it changes.</summary>
         protected abstract int LatestDatabaseVersion { get; }
+
+        ///<summary>The database path.</summary>
         public string DatabasePath { get; private set; }
+
+        ///<summary>The database flags used when the connection was open.</summary>
         public SQLiteOpenFlags DatabaseOpenFlags { get; private set; }
+
+        ///<summary>Get a write connection lock on the database.</summary>
+        ///<param name="reason">The reason the connection lock was obtained.</param>
         public IDisposable GetWriteConnectionLock(string reason) => DatabaseWriteLock.Lock(this, reason, DatabaseWriteLockTimeout);
+
+        ///<summary>Get a write connection lock on the database.</summary>
+        ///<param name="reason">The reason the connection lock was obtained.</param>
+        ///<param name="timeout">The max time the lock will be obtained before being freed.</param>
         public IDisposable GetWriteConnectionLock(string reason, TimeSpan timeout) => DatabaseWriteLock.Lock(this, reason, timeout);
 
 		private Action<string> _tracer;
@@ -113,8 +135,10 @@ namespace SQLite
 		/// </summary>
         public TimeSpan BusyTimeout { get; set; } = TimeSpan.FromSeconds(1);
 
+        ///<summary>The default write connection lock timeout.</summary>
         public TimeSpan DatabaseWriteLockTimeout { get; set; } = TimeSpan.FromMinutes(1);
 
+        ///<summary>The log action method.</summary>
         public static Action<SqlLogType, string, Exception> Log
  		{
 			get => _log;
@@ -128,12 +152,12 @@ namespace SQLite
             return s?.Replace("'", "''");
         }
 
-        public DataAccessLayerBase()
+        protected DataAccessLayerBase()
         {
 
         }
 
-        public DataAccessLayerBase(string databasePath, SQLiteOpenFlags flags = SQLiteOpenFlags.ReadWrite | SQLiteOpenFlags.Create)
+        protected DataAccessLayerBase(string databasePath, SQLiteOpenFlags flags = SQLiteOpenFlags.ReadWrite | SQLiteOpenFlags.Create)
         {
             Init(databasePath, flags);
         }
@@ -270,7 +294,7 @@ namespace SQLite
             // changed for a shared in memory database path
             if (databasePath == InMemoryDatabase)
             {
-                databasePath = String.Format(NamedInMemoryDatabaseFormat, GetType().Name);
+                databasePath = GetNamedInMemoryDatabase(GetType().Name);
                 flags = flags | SQLiteOpenFlags.OpenUri;
                 connectionPoolFlags = connectionPoolFlags | SQLiteOpenFlags.OpenUri;
             }
@@ -408,11 +432,10 @@ namespace SQLite
 
         #endregion
 
-        public void Optimize()
-        {
-            Write(Optimize);
-        }
+        ///<summary>Optimize database, executes PRAGMA optimize</summary>
+        public void Optimize() => Write(Optimize);
 
+        ///<summary>Optimize database, executes PRAGMA optimize</summary>
         public static int Optimize(SQLiteConnection conn)
         {
             try
@@ -426,12 +449,10 @@ namespace SQLite
             }
         }
 
+        ///<summary>Analyze database, executes reindex, then analyze</summary>
+        public void Analyze() => Write(Analyze);
 
-        public void Analyze()
-        {
-            Write(Analyze);
-        }
-
+        ///<summary>Analyze database, executes reindex, then analyze</summary>
         public static int Analyze(SQLiteConnection conn)
         {
             try
@@ -654,6 +675,7 @@ namespace SQLite
             return ret;
         }
 
+        ///<summary>The default number of retires that will happen when executing a database command.</summary>
         public const int DefaultRetries = 10;
         private static readonly Random _jitter = new Random();
 
